@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#07111e">
+<meta name="description" content="A firsthand look at AI-assisted SAP ABAP and CDS development with VS Code, Claude Code, ABAP FS, and MCP.">
+<title>Vibe Coding in SAP ABAP Using VS Code and Claude Code | Muhammad Ashar</title>
+<style>
+:root{color-scheme:dark;--bg:#07111e;--card:#102439;--line:#2a465e;--text:#edf7ff;--muted:#b6c8d8;--cyan:#69e5e9}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font:16px/1.82 Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;color:var(--text);background:radial-gradient(ellipse at 80% -5%,#163c52 0%,transparent 38%),var(--bg)}
+a{color:#88dcf8;text-decoration:none}a:hover{text-decoration:underline}
+header{position:sticky;top:0;z-index:2;background:#091a2de8;border-bottom:1px solid var(--line);backdrop-filter:blur(13px)}
+.nav{max-width:1080px;margin:auto;padding:15px 24px;display:flex;justify-content:space-between;align-items:center;gap:18px}.brand{font-weight:800;color:#fff;letter-spacing:-.02em}.back{font-size:13px;color:#bcd4e5}
+main{max-width:800px;margin:0 auto;padding:68px 25px 96px}.eyebrow{font-weight:800;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;font-size:12px}h1{font-size:clamp(34px,5vw,57px);line-height:1.13;letter-spacing:-.045em;margin:20px 0 22px}h2{font-size:clamp(23px,3vw,29px);line-height:1.3;letter-spacing:-.025em;margin:50px 0 16px;color:#f3faff}p{margin:17px 0;color:#c3d5e4}strong{color:#fff}.subtitle{font-size:19px;line-height:1.6;color:#c3d7e6;margin-bottom:20px}.meta{font-size:13px;color:#a3bdd0;border-bottom:1px solid var(--line);padding-bottom:30px;margin-bottom:35px}.lead{font-size:17px}.tools{margin:23px 0;padding:21px 25px;background:linear-gradient(135deg,#122b40,#102237);border:1px solid var(--line);border-radius:15px}.tools ul{margin:0;padding-left:22px}.tools li{margin:9px 0;color:#c8d9e6}blockquote{margin:24px 0;padding:13px 22px;background:#122d43;border-left:3px solid var(--cyan);border-radius:0 12px 12px 0;font-style:italic;color:#eafaff}.flow{margin:25px 0;padding:20px 24px;overflow:auto;border:1px solid #31546b;background:#0f2539;border-radius:13px;text-align:center;font-size:15px;letter-spacing:.01em;color:#a7ecf2;font-weight:700}.links{margin:15px 0;padding-left:23px}.links li{margin:8px 0;color:var(--muted)}footer{border-top:1px solid var(--line);padding:25px 20px 40px;color:#95b0c4;text-align:center;font-size:13px}@media(max-width:640px){main{padding-top:43px}.nav{padding:13px 17px}h1{font-size:35px}.back{font-size:12px}.flow{font-size:12px;padding:16px 10px}}
+</style>
+</head>
+<body>
+<header><div class="nav"><a class="brand" href="../index.html">Muhammad Ashar<span style="color:var(--cyan)">.</span></a><a class="back" href="../index.html">← Back to Portfolio</a></div></header>
+<main>
+<div class="eyebrow">Technical Insights · SAP Development</div>
+<h1>Vibe Coding in SAP ABAP Using VS Code and Claude Code</h1>
+<p class="subtitle">Exploring a more practical way to work with ABAP and CDS development using AI-assisted coding.</p>
+<div class="meta">By Muhammad Ashar &nbsp;·&nbsp; November 8, 2026</div>
+<p class="lead">I've been exploring how AI-assisted coding can fit into SAP ABAP development, particularly when working with CDS views and custom ABAP developments.</p>
+<p>Most of us working with SAP are familiar with Eclipse ADT and SAP GUI. But with tools like Claude Code becoming increasingly useful for development, I wanted to see how I could bring my SAP development workflow into VS Code.</p>
+<p>The idea was simple: <strong>connect VS Code to an SAP system, access existing ABAP objects, and use Claude to understand and work with the code.</strong></p>
+<h2>How I Set It Up</h2>
+<p>I used three main tools:</p>
+<div class="tools"><ul>
+<li><strong>VS Code:</strong> My development environment.</li>
+<li><strong>ABAP FS (ABAP Remote Filesystem):</strong> Connects VS Code to the SAP ABAP repository using ADT services.</li>
+<li><strong>Claude Code:</strong> Helps analyze code, understand dependencies, and suggest developments.</li>
+</ul></div>
+<p>The setup starts with installing the ABAP FS extension in VS Code and configuring a connection to the SAP system.</p>
+<p>Once connected, I could browse ABAP objects and open CDS definitions directly in VS Code.</p>
+<p>The interesting part comes when Claude enters the workflow.</p>
+<h2>Where MCP Comes In</h2>
+<p>Claude can understand ABAP code, but accessing objects from an SAP system requires tools.</p>
+<p>That's where <strong>Model Context Protocol (MCP)</strong> comes in.</p>
+<p>MCP provides a standard way for AI assistants to communicate with external tools. With a compatible MCP integration, Claude can request repository information through the available ABAP development tools.</p>
+<p>The overall flow looks like this:</p>
+<div class="flow">Developer → Claude Code → MCP Tools → ABAP FS / ADT → SAP System</div>
+<p>One thing worth understanding is that connecting ABAP FS to VS Code doesn't automatically mean every Claude Code session has access to its MCP tools. That connection must be available to the AI client you're using.</p>
+<h2>What Can You Actually Do?</h2>
+<p>Let's say you're working with a custom CDS view.</p>
+<p>Instead of manually going through its entire definition, you could ask Claude:</p>
+<blockquote>“Review this CDS view, explain the joins and calculations, and suggest where the logic could be optimized.”</blockquote>
+<p>You can also use it to understand existing ABAP programs, draft CDS changes, review SQL logic, or investigate dependencies.</p>
+<p>Of course, AI-generated changes still need proper review, syntax checks, activation, and testing in SAP.</p>
+<h2>Is It Worth Exploring?</h2>
+<p>For me, the biggest advantage isn't simply generating ABAP code.</p>
+<p>It's having an assistant that can help understand unfamiliar developments, explain complicated logic, and reduce the time spent investigating existing code.</p>
+<p>There are still limitations, particularly around system connectivity, MCP configuration, and supported development operations. But even using it for code analysis and development assistance is useful.</p>
+<p>If you're working with ABAP or CDS development and haven't explored VS Code with an AI coding assistant yet, it's worth experimenting with.</p>
+<h2>Useful Links</h2>
+<ul class="links"><li><a href="https://marcellourbani.github.io/vscode_abap_remote_fs/" target="_blank" rel="noopener noreferrer">ABAP FS</a></li><li><a href="https://code.claude.com/docs/en/overview" target="_blank" rel="noopener noreferrer">Claude Code</a></li><li><a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener noreferrer">Model Context Protocol</a></li></ul>
+</main>
+<footer>© 2026 Muhammad Ashar · <a href="../index.html">Back to portfolio</a></footer>
+</body></html>
