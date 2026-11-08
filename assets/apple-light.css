@@ -1,0 +1,48 @@
+/* Apple-inspired light theme shared by project pages and the blog. */
+:root{color-scheme:light!important;--bg:#f5f5f7!important;--panel:#fff!important;--panel2:#fff!important;--card:#fff!important;--deep:#f0f3f7!important;--line:#e1e4e9!important;--text:#1d1d1f!important;--txt:#1d1d1f!important;--muted:#65656c!important;--cyan:#0071e3!important;--aqua:#0071e3!important;--blue:#0071e3!important;--purple:#47648d!important;--gold:#87632e!important}
+html{scroll-padding-top:82px}body{color:#1d1d1f!important;background:#f5f5f7!important;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif!important;-webkit-font-smoothing:antialiased}
+header{background:rgba(255,255,255,.94)!important;border-color:#e5e5ea!important;backdrop-filter:blur(18px)}
+.brand,.brand span,.accent{color:#1d1d1f!important}.brand span{color:#0071e3!important}
+.nav-right,.navlinks,.links,.back{color:#5d5d65!important}
+a:hover{color:#0071e3!important}a:focus-visible,button:focus-visible{outline:3px solid #0071e3;outline-offset:3px}
+.hero{background:#f5f5f7!important;border-color:#e5e5ea!important}.hero h1,.hero h2,.hero .sub,.hero-panel h2{color:#1d1d1f!important}.gradient{background:none!important;-webkit-text-fill-color:#0071e3!important;color:#0071e3!important}
+.hero p,.hero .lead,.lead,.minor,.meta,.hero .sub,.section-intro{color:#60616a!important}
+.eyebrow,.kicker,.number,.i{color:#0071e3!important}
+.chip,.mini-tag,.pill{background:#edf4fc!important;border-color:#d6e5f6!important;color:#1768ac!important;border-radius:999px!important}
+.card,.tile,.stat,.panel,.hero-panel,.decision,.deep,.codebox,.diagram,.flownode,.notice,.flow,.stage,.stage-pair,.info,.cross,.highlight,.toc,.tools,.timeline,.concepts,.table,.diagram-flow,.diagram-head,.outcomes>div,.three>div{background:#fff!important;background-image:none!important;color:#1d1d1f!important;border-color:#e0e4e9!important;box-shadow:0 7px 24px rgba(20,26,38,.035)!important}
+.card h3,.tile h3,.stat b,.card strong,.stage b,.flownode b,.panel b,.hero-panel b,.content h2,.section h2,.content h3,.diagramtitle{color:#1d1d1f!important}
+.content p,.content ul,.content li,.card p,.tile p,.stat span,.section p,.note,.notice,.foot,.cross,.stage span,.stage small,.flownode span,.hero-panel small,.hero-panel .foot{color:#61646e!important}
+.hero-panel .track{border-color:#cedfed!important}.hero-panel .step:before{background:#0071e3!important;border-color:#fff!important}
+.content section,.section,footer{border-color:#e2e5e9!important}
+.diagram .stage,.diagram .data,.diagram .ai,.diagram .stage-pair,.diagram .down,.diagram-flow .stage,.diagram-flow .ai,.diagram-flow .data{color:#1d1d1f!important;background:#eef5fe!important;border-color:#d6e6f7!important}
+.diagram :is(p,span,small),.diagram-flow :is(p,span,small){color:#626b78!important}
+.toc{background:#fff!important}.toc a{color:#566474!important}.toc a:hover{color:#0071e3!important}
+.cta,.button,.btn.primary{background:#0071e3!important;border-color:#0071e3!important;color:#fff!important;border-radius:999px!important}
+.btn:not(.primary){border-color:#d8dfe6!important;background:white!important;color:#1d1d1f!important;border-radius:999px!important}
+.table>div{background:#fff!important;border-color:#e1e4e9!important;color:#44464f!important}
+.flow,.flownode,.cross{background:#fff!important}.flownode{min-width:0}
+.notice,.note{color:#63666f!important}
+/* Large blocks and diagrams should never force horizontal scrolling on phones. */
+img,svg{max-width:100%} .diagram,.diagram-flow,.flow,.codebox,.table{max-width:100%;overflow-x:auto}
+@media(max-width:700px){.hero{padding-top:42px!important;padding-bottom:35px!important}.hero h1{font-size:clamp(2.35rem,10vw,3.1rem)!important}.layout{gap:24px!important;padding-top:30px!important}.section{padding:38px 0!important}.navlinks,.nav-right,.links{gap:10px!important;font-size:.76rem!important}.hero-panel{padding:18px!important}.diagram{padding:14px!important}}
+
+/* Reading page */
+.portfolio-blog h1,.portfolio-blog h2,.portfolio-blog strong{color:#1d1d1f!important}
+.portfolio-blog p,.portfolio-blog .subtitle,.portfolio-blog .lead,.portfolio-blog .meta,.portfolio-blog .tools li,.portfolio-blog .links li,.portfolio-blog footer{color:#62646e!important}
+.portfolio-blog a{color:#0071e3}.portfolio-blog .brand{color:#1d1d1f!important}
+.portfolio-blog .eyebrow{color:#0071e3!important}.portfolio-blog .tools,.portfolio-blog blockquote,.portfolio-blog .flow{background:#fff!important;background-image:none!important;border-color:#e2e5e9!important;color:#44464f!important}
+.portfolio-blog blockquote{border-left:3px solid #0071e3!important}
+.portfolio-blog main{max-width:780px}
+
+/* Accessibility and contrast corrections for converted dark-theme components */
+.diagramtitle{color:#125ca8!important;font-weight:800!important}
+.diagram .pillrow span{background:#dceafb!important;border-color:#bed5ee!important;color:#254f77!important;font-weight:600!important}
+.diagram .down{color:#0071e3!important;background:transparent!important}
+.diagram .stage strong{color:#172b3d!important}
+/* Restore reading contrast in Datasphere engineering tiles */
+.tile ul,.tile li,.matrix .tile ul,.matrix .tile li{color:#465568!important;opacity:1!important}
+.tile li::marker{color:#0071e3!important}
+.tile p,.matrix .tile p{color:#536072!important;opacity:1!important}
+.tile h3,.matrix .tile h3{color:#1d1d1f!important}
+.tile .i,.matrix .tile .i{color:#006fc9!important}
+strong{color:#1d1d1f!important}
