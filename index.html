@@ -576,6 +576,29 @@ html{scroll-padding-top:16px}
 @media(hover:hover) and (prefers-reduced-motion:no-preference){.pf-card:hover .auto-core{animation:pf-v3-float 2.4s ease-in-out infinite}.pf-card:hover .conversation-result{box-shadow:0 5px 17px #3775ba17}}@keyframes pf-v3-float{50%{transform:translateY(-4px)}}
 @media(max-width:700px){.pf-heading h2{font-size:29px}.pf-heading p{font-size:12px;margin-bottom:16px}.pf-card{min-height:382px}.pf-content{padding:19px 16px 0}.pf-card h3{font-size:19px}.pf-card p{font-size:11px}.pf-card .scene{height:153px}.pf-bottom{padding:12px 16px 18px}.pf-bottom a{background:#edf4fd;color:#0071e3;border:1px solid #e1ebf6;box-shadow:none}.pf-filter{font-size:11px;padding:8px 12px}.pf-quick{font-size:10px}.pf-quick button{font-size:10px}.mini-kpis{left:9px;right:9px;top:11px;gap:5px}.mini-kpis>div{padding:8px 6px}.mini-kpis b{font-size:13px}.mini-kpis span{font-size:8px}.analytics-bottom{left:10px;right:10px;bottom:10px;height:58px;gap:7px}.bar-cluster{gap:4px}.data-flow{inset:9px 12px;display:grid;grid-template-columns:minmax(0,1fr) 14px minmax(0,1fr);grid-template-rows:1fr 13px 1fr;column-gap:4px;row-gap:0}.data-stage{height:51px;flex-direction:row;gap:5px;padding:5px 7px;border-radius:9px}.data-stage strong{text-align:left;font-size:9px;margin:0;overflow-wrap:normal}.stage-icon{font-size:17px;flex:none}.data-flow>.data-stage:nth-of-type(1){grid-column:1;grid-row:1}.data-flow>.data-stage:nth-of-type(2){grid-column:3;grid-row:1}.data-flow>.data-stage:nth-of-type(3){grid-column:3;grid-row:3}.data-flow>.data-stage:nth-of-type(4){grid-column:1;grid-row:3}.data-flow>.data-arrow:nth-of-type(1){grid-column:2;grid-row:1}.data-flow>.data-arrow:nth-of-type(2){grid-column:3;grid-row:2;transform:rotate(90deg);font-size:13px}.data-flow>.data-arrow:nth-of-type(3){grid-column:2;grid-row:3;transform:rotate(180deg)}.plan-context{top:10px;font-size:9px}.tiny-blue{font-size:8px}.planning-process{left:7%;right:7%;gap:5px;top:34%}.plan-step{padding:9px 4px}.plan-icon{font-size:20px}.plan-step strong{font-size:9px}.plan-arrow{font-size:14px}.auto-core{left:39%;width:22%}.auto-node{font-size:8px;padding:7px 8px}.auto-left{left:3%}.auto-right{right:3%}.conversation-ui{inset:8px 10px;gap:5px}.conversation-question{padding:6px 7px;font-size:10px}.conversation-path{gap:4px}.conversation-path span{font-size:8px;padding:2px 5px}.conversation-result{padding:6px 8px}.result-stats strong{font-size:15px}.result-bars{height:35px}}
 @media(max-width:355px){.data-stage strong{font-size:8px}.data-stage{gap:3px;padding:4px 5px}.conversation-path span{font-size:7px}.result-stats strong{font-size:13px}.pf-tags span{font-size:9px}}
+</style><style id="portfolio-grid-balance">
+/* Avoid an empty final grid cell when a technology selection contains an odd number of projects. */
+@media(min-width:701px){
+  .pf-gallery .pf-card.pf-wide{grid-column:1 / -1}
+  .pf-gallery .pf-card.pf-wide .pf-content{
+    display:grid;
+    grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);
+    grid-template-rows:min-content min-content 1fr;
+    column-gap:28px;
+    padding:24px 24px 0;
+    align-items:start;
+  }
+  .pf-gallery .pf-card.pf-wide .pf-eyebrow{grid-column:1;grid-row:1}
+  .pf-gallery .pf-card.pf-wide h3{grid-column:1;grid-row:2;margin:10px 0 10px}
+  .pf-gallery .pf-card.pf-wide p{grid-column:1;grid-row:3;min-height:0;max-width:440px;margin:0}
+  .pf-gallery .pf-card.pf-wide .scene{
+    grid-column:2;grid-row:1 / 4;
+    width:100%;height:180px;
+    margin:0;
+    align-self:center;
+  }
+  .pf-gallery .pf-card.pf-wide .pf-bottom{padding:14px 24px 19px}
+}
 </style></head>
 <body>
 <header class="top"><div class="shell"><a class="brand" href="#top">Muhammad Ashar.</a><nav class="nav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Contact</a><a href="https://github.com/asherahmedd" rel="noopener" target="_blank">GitHub ↗</a></nav><div class="mobmenu"><a aria-label="Jump to contact information" class="quick-contact" href="#contact">✉</a><a aria-label="GitHub profile" href="https://github.com/asherahmedd" rel="noopener" target="_blank"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.89c-2.77.6-3.36-1.18-3.36-1.18-.46-1.15-1.12-1.46-1.12-1.46-.91-.63.07-.62.07-.62 1.01.07 1.54 1.04 1.54 1.04.9 1.54 2.36 1.1 2.94.84.09-.65.35-1.1.64-1.35-2.21-.25-4.53-1.11-4.53-4.94 0-1.09.39-1.98 1.03-2.67-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.11 2.5.34 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.69 1.03 1.58 1.03 2.67 0 3.84-2.32 4.68-4.54 4.93.36.31.68.92.68 1.85V21c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg></a><button aria-expanded="false" aria-label="Toggle navigation" class="iconbtn" id="menubtn"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div></div><nav class="mobile-nav" id="mobilenav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a href="#contact">Contact</a><a href="https://github.com/asherahmedd">GitHub</a></nav></header>
@@ -632,13 +655,18 @@ const root=document.getElementById('work'),rail=document.getElementById('pf-gall
 const cards=[...rail.querySelectorAll('.pf-card')],buttons=[...root.querySelectorAll('.pf-filter')];
 const dots=document.getElementById('pf-dots'),counter=document.getElementById('pf-counter');
 const visible=()=>cards.filter(x=>!x.hidden);
+function balanceGrid(){
+  cards.forEach(c=>c.classList.remove('pf-wide'));
+  const shown=visible();
+  if(shown.length%2===1)shown[shown.length-1].classList.add('pf-wide');
+}
 function index(){const xs=visible();let best=0,delta=Infinity;xs.forEach((x,i)=>{const d=Math.abs(x.offsetLeft-rail.scrollLeft-rail.clientWidth*.08);if(d<delta){delta=d;best=i}});return best}
 function paint(){const xs=visible(),cur=index();dots.replaceChildren();xs.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.className='pf-dot'+(i===cur?' on':'');b.setAttribute('aria-label','Show project '+(i+1));b.addEventListener('click',()=>rail.scrollTo({left:x.offsetLeft-xs[0].offsetLeft,behavior:'smooth'}));dots.appendChild(b)});counter.textContent=String(cur+1).padStart(2,'0')+' / '+String(xs.length).padStart(2,'0')}
-function choose(f){buttons.forEach(b=>{const on=b.dataset.filter===f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});cards.forEach(c=>c.hidden=f!=='all'&&!c.dataset.categories.split(' ').includes(f));rail.scrollLeft=0;const n=visible().length;document.getElementById('pf-status').textContent=n+' '+(n===1?'project':'projects');paint()}
+function choose(f){buttons.forEach(b=>{const on=b.dataset.filter===f;b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on))});cards.forEach(c=>c.hidden=f!=='all'&&!c.dataset.categories.split(' ').includes(f));rail.scrollLeft=0;const n=visible().length;document.getElementById('pf-status').textContent=n+' '+(n===1?'project':'projects');balanceGrid();paint()}
 buttons.forEach(b=>b.addEventListener('click',()=>choose(b.dataset.filter)));root.querySelectorAll('[data-jump]').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.jump)));
 document.getElementById('pf-next').addEventListener('click',()=>{const x=visible();x[(index()+1)%x.length]?.scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'})});
 document.getElementById('pf-previous').addEventListener('click',()=>{const x=visible();x[(index()-1+x.length)%x.length]?.scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'})});
-rail.addEventListener('scroll',()=>requestAnimationFrame(paint),{passive:true});window.addEventListener('resize',paint);paint();
+rail.addEventListener('scroll',()=>requestAnimationFrame(paint),{passive:true});window.addEventListener('resize',paint);balanceGrid();paint();
 })();
 </script>
 </body></html>
