@@ -648,6 +648,6 @@ j.addEventListener('click',()=>{if(mobileJourney.matches)setJourney(!jl.classLis
  });
  const requested=decodeURIComponent(location.hash.slice(1));
  if(requested.startsWith('work-')&&labels[requested.slice(5)])setFilter(requested.slice(5),false);
-})();;
+})();
 </script>
 </body></html>
