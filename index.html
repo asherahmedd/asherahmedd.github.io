@@ -507,7 +507,48 @@ html{scroll-padding-top:16px}
  .planning-bottom{display:none}
 }
 @media(max-width:390px){#projectscroll.projects .project.project-planning .project-thumb{height:126px;flex-basis:126px}}
-</style></head>
+</style><!-- Project Explorer thumbnail visibility fix -->
+<style id="project-explorer-thumbnail-fix">
+/* The legacy project deck hid .project-thumb globally.
+   Explicitly restore it inside the new desktop and mobile explorer. */
+.explorer-desktop-grid .explorer-card .project-thumb,
+.explorer-mobile-list .explorer-mobile-panel .project-thumb{
+  display:block!important;
+  position:relative;
+  flex-shrink:0;
+  border:1px solid #dce7f3;
+  background:linear-gradient(145deg,#f7fbff,#ecf4fd);
+}
+.explorer-desktop-grid .explorer-card .thumb-ai-arch,
+.explorer-desktop-grid .explorer-card .thumb-automation,
+.explorer-mobile-list .explorer-mobile-panel .thumb-ai-arch,
+.explorer-mobile-list .explorer-mobile-panel .thumb-automation{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+}
+.explorer-desktop-grid .explorer-card .project-thumb img,
+.explorer-mobile-list .explorer-mobile-panel .project-thumb img{
+  display:block!important;
+  max-width:100%;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+}
+.explorer-desktop-grid .explorer-card .thumb-dashboard,
+.explorer-desktop-grid .explorer-card .thumb-engineering,
+.explorer-desktop-grid .explorer-card .planning-thumb,
+.explorer-mobile-list .explorer-mobile-panel .thumb-dashboard,
+.explorer-mobile-list .explorer-mobile-panel .thumb-engineering,
+.explorer-mobile-list .explorer-mobile-panel .planning-thumb{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+}
+</style>
+</head>
 <body>
 <header class="top"><div class="shell"><a class="brand" href="#top">Muhammad Ashar.</a><nav class="nav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Contact</a><a href="https://github.com/asherahmedd" rel="noopener" target="_blank">GitHub ↗</a></nav><div class="mobmenu"><a aria-label="Jump to contact information" class="quick-contact" href="#contact">✉</a><a aria-label="GitHub profile" href="https://github.com/asherahmedd" rel="noopener" target="_blank"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.89c-2.77.6-3.36-1.18-3.36-1.18-.46-1.15-1.12-1.46-1.12-1.46-.91-.63.07-.62.07-.62 1.01.07 1.54 1.04 1.54 1.04.9 1.54 2.36 1.1 2.94.84.09-.65.35-1.1.64-1.35-2.21-.25-4.53-1.11-4.53-4.94 0-1.09.39-1.98 1.03-2.67-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.11 2.5.34 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.69 1.03 1.58 1.03 2.67 0 3.84-2.32 4.68-4.54 4.93.36.31.68.92.68 1.85V21c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg></a><button aria-expanded="false" aria-label="Toggle navigation" class="iconbtn" id="menubtn"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div></div><nav class="mobile-nav" id="mobilenav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a href="#contact">Contact</a><a href="https://github.com/asherahmedd">GitHub</a></nav></header>
 <main class="shell" id="top">
