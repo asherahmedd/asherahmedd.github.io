@@ -24,7 +24,7 @@ function begin(){
 }
 /* Optional recognition of returning browsers. This is entirely separate from
    baseline, memory-only analytics and never runs until the user opts in. */
-const repeatChoice='portfolio_repeat_consent_v1',repeatId='portfolio_repeat_id_v1';
+const repeatChoice='portfolio_visitor_details_consent_v2',repeatId='portfolio_repeat_id_v1';
 const cookieName='portfolio_returning_browser';
 const repeatPrivacy='/portfolio-insights/privacy.html';
 const repeatRead=key=>{try{return localStorage.getItem(key)}catch{return null}};
