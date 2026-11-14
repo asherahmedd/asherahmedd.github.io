@@ -16,6 +16,20 @@ function secretOkay(req,secret){
  if(!secret||token.length!==secret.length||token.length<20)return false;
  let diff=0;for(let i=0;i<token.length;i++)diff|=token.charCodeAt(i)^secret.charCodeAt(i);return diff===0;
 }
+/* Only consented browser identifiers reach this route. Store a one-way digest
+   rather than the browser's raw identifier. This remains pseudonymous data. */
+async function identityHash(id,secret){
+ const bytes=new TextEncoder().encode(String(secret)+':'+id);
+ const digest=await crypto.subtle.digest('SHA-256',bytes);
+ return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function recordIdentity(db,id,secret){
+ const hash=await identityHash(id,secret);
+ const now=new Date().toISOString();
+ const prior=await db.prepare('SELECT first_seen FROM identity_visitors WHERE visitor_hash=?').bind(hash).first();
+ await db.prepare('INSERT INTO identity_visitors(visitor_hash,first_seen,last_seen,visits) VALUES(?,?,?,1) ON CONFLICT(visitor_hash) DO UPDATE SET last_seen=excluded.last_seen,visits=visits+1').bind(hash,now,now).run();
+ await db.prepare('INSERT INTO identity_visits(ts,visitor_hash,returning) VALUES(?,?,?)').bind(now,hash,prior?1:0).run();
+}
 async function report(db,hours){
  const since=new Date(Date.now()-hours*3600000).toISOString();
  const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72?"substr(ts,1,13)":"substr(ts,1,10)";
@@ -31,15 +45,24 @@ async function report(db,hours){
  filters:"SELECT item,COUNT(*) clicks FROM events WHERE ts>=? AND event='filter_click' GROUP BY item ORDER BY clicks DESC LIMIT 10",
  scroll:"SELECT depth,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='scroll_depth' AND depth>0 GROUP BY depth ORDER BY depth"};
  const keys=Object.keys(sql),rs=await Promise.all(keys.map(k=>db.prepare(sql[k]).bind(since).all()));
- return Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results]));
+ const repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first();
+ return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{} };
 }
 export default {
  async fetch(req,env){
   const path=new URL(req.url).pathname;
   if(path==='/health')return reply({status:'ok',service:'portfolio-insights'});
-  if(path==='/track'||path==='/stats'){
+  if(path==='/track'||path==='/stats'||path==='/identity'){
    if(req.headers.get('Origin')!==origin)return reply({error:'origin_not_allowed'},403);
    if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+   if(path==='/identity'){
+    if(req.method!=='POST')return reply({error:'method_not_allowed'},405,cors);
+    if(Number(req.headers.get('Content-Length')||0)>512)return reply({error:'payload_too_large'},413,cors);
+    let data;try{data=await req.json()}catch{return reply({error:'invalid_json'},400,cors)}
+    if(data?.consent!==true||typeof data?.persistent_id!=='string'||!/^[0-9a-f-]{36}$/i.test(data.persistent_id))return reply({error:'invalid_consented_id'},400,cors);
+    try{await recordIdentity(env.DB,data.persistent_id,env.ADMIN_TOKEN);return new Response(null,{status:204,headers:cors})}
+    catch{return reply({error:'identity_storage_unavailable'},503,cors)}
+   }
    if(path==='/track'){
     if(req.method!=='POST')return reply({error:'method_not_allowed'},405,cors);
     if(Number(req.headers.get('Content-Length')||0)>2048)return reply({error:'payload_too_large'},413,cors);
@@ -60,5 +83,5 @@ export default {
   }
   return reply({error:'not_found'},404);
  },
- async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run()}
+ async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run()}
 };
