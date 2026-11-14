@@ -25,16 +25,29 @@ function begin(){
 /* Optional recognition of returning browsers. This is entirely separate from
    baseline, memory-only analytics and never runs until the user opts in. */
 const repeatChoice='portfolio_repeat_consent_v1',repeatId='portfolio_repeat_id_v1';
+const cookieName='portfolio_returning_browser';
 const repeatPrivacy='/portfolio-insights/privacy.html';
 const repeatRead=key=>{try{return localStorage.getItem(key)}catch{return null}};
-function clearRepeat(){try{localStorage.removeItem(repeatId)}catch{}}
+function readRepeatCookie(){
+ const entry=document.cookie.split('; ').find(v=>v.startsWith(cookieName+'='));
+ return entry?decodeURIComponent(entry.slice(cookieName.length+1)):'';
+}
+function clearRepeat(){
+ document.cookie=cookieName+'=; Max-Age=0; Path=/; SameSite=Lax; Secure';
+ try{localStorage.removeItem(repeatId)}catch{}
+}
+function writeRepeatCookie(id){
+ document.cookie=cookieName+'='+encodeURIComponent(id)+'; Max-Age=7776000; Path=/; SameSite=Lax; Secure';
+ return readRepeatCookie()===id;
+}
 function identityVisit(){
  if(repeatRead(repeatChoice)!=='yes')return;
- let id=repeatRead(repeatId);
+ let id=readRepeatCookie();
  if(!id||!/^[0-9a-f-]{36}$/i.test(id)){
   id=fresh();
-  try{localStorage.setItem(repeatId,id)}catch{return}
+  if(!writeRepeatCookie(id))return;
  }
+ try{localStorage.removeItem(repeatId)}catch{}
  fetch(base+'/identity',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({persistent_id:id,consent:true}),keepalive:true}).catch(()=>{});
 }
 async function offerRepeatChoice(){
@@ -44,13 +57,13 @@ async function offerRepeatChoice(){
  const show=()=>{
   if(document.getElementById('portfolio-repeat-choice'))return;
   const host=document.createElement('aside');host.id='portfolio-repeat-choice';
-  host.setAttribute('aria-label','Optional returning visitor analytics');
+  host.setAttribute('aria-label','Analytics cookie preferences');
   host.style.cssText='position:fixed;bottom:17px;left:17px;right:17px;z-index:100000;max-width:430px;background:#fff;color:#20252c;border:1px solid #dce2e9;border-radius:15px;box-shadow:0 12px 35px #18243b26;padding:17px 18px;font:13px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
-  const heading=document.createElement('strong');heading.textContent='Optional returning-visitor analytics';
-  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='Basic page analytics already runs without identifying you. May we save a random browser ID to count your future visits? No names or LinkedIn profiles are collected.';
+  const heading=document.createElement('strong');heading.textContent='Allow analytics cookies?';
+  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='We use basic analytics to improve this portfolio. With your permission, an optional cookie helps us recognize returning visits. We never identify your name or LinkedIn profile.';
   const actions=document.createElement('div');actions.style.cssText='display:flex;gap:9px;flex-wrap:wrap;align-items:center';
   const yes=document.createElement('button'),no=document.createElement('button'),link=document.createElement('a');
-  yes.type='button';no.type='button';yes.textContent='Allow repeat-visit tracking';no.textContent='No thanks';link.href=repeatPrivacy;link.textContent='Privacy';
+  yes.type='button';no.type='button';yes.textContent='Allow analytics cookies';no.textContent='Reject optional cookies';link.href=repeatPrivacy;link.textContent='Cookie details';
   for(const b of [yes,no])b.style.cssText='border:1px solid #d6dde6;border-radius:8px;background:#fff;color:#283b52;padding:8px 11px;cursor:pointer;font:600 12px sans-serif';
   yes.style.background='#0071e3';yes.style.borderColor='#0071e3';yes.style.color='#fff';
   link.style.cssText='font-size:12px;color:#056fca';
@@ -60,7 +73,7 @@ async function offerRepeatChoice(){
  };
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',show,{once:true});else show();
 }
-/* Opt-out is honored across pages. No consent popup, cookies, persistent IDs or fingerprinting. */
+/* Baseline remains cookieless; optional identification requires explicit consent. */
 function disable(){
  enabled=false;
  try{localStorage.setItem(repeatChoice,'no')}catch{}
