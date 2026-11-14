@@ -17,7 +17,7 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 4. Generate a random high-entropy token, e.g. `openssl rand -hex 32`; store it **only** with `npx wrangler secret put ADMIN_TOKEN`.
 5. Run `npx wrangler deploy` from `worker/` and copy its HTTPS `workers.dev` URL.
 6. Open `https://asherahmedd.github.io/portfolio-insights/`. Enter the Worker URL and your private admin token. URL is saved locally; token stays in browser memory only. **Do not put the token in git or HTML.**
-7. After publishing a privacy notice/consent control, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; this script does not add a consent UI. Call `PortfolioInsights.enable()` only from an explicit opt-in action, and `disable()` on opt-out.
+7. After publishing a privacy notice/consent control, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker displays an opt-in consent prompt and links to `privacy.html`. Collection starts only after acceptance, and users can withdraw consent from the privacy page.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
 ## Privacy and security
@@ -30,7 +30,7 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 - The Worker checks the expected site origin, but Origin headers can be spoofed. Add Cloudflare rate limiting or a challenge rule for `/track` if abused.
 - The demo dataset in the dashboard is **fictional** and is never mixed with live records.
 - Keep the `ADMIN_TOKEN` only in Cloudflare Workers secrets; never put credentials in GitHub, browser source, URLs, or commits.
-- Add data retention/deletion policies appropriate for your audience and applicable privacy regulations. The included SQL does not automatically purge old events.
+- The included Worker has a daily scheduled cleanup that deletes events older than 90 days after you deploy the configured cron trigger. Review retention requirements for your audience and applicable laws.
 
 ## Data captured
 
