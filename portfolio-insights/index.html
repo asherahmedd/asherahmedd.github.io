@@ -58,10 +58,7 @@
  <section class="panel"><div class="panel-heading"><h2>Visits over time</h2><span class="subtle" id="trend-label">Daily page visits</span></div><p>See when your portfolio attracted visitors.</p><svg class="trend" viewBox="0 0 680 210" preserveAspectRatio="none" aria-label="Tracked visits over time"><path class="grid-line" d="M15 30H668 M15 78H668 M15 126H668 M15 174H668"/><path id="trend-area" class="area" d="M15 174L668 174Z"/><polyline class="spark" id="trend-line" points="15,174 668,174"/></svg><div class="subtle" id="date-label">Date range</div></section>
  <section class="panel"><h2>Where visitors came from</h2><p>Sources detected from referring websites. Missing sources are included as Other / unknown.</p><div class="rows" id="sources"></div></section>
 </div>
-<div class="layout">
- <section class="panel"><h2>Most popular projects</h2><p>Projects visitors chose to open.</p><div class="rows" id="projects"></div></section>
- <section class="panel"><h2>Countries</h2><p>Approximate location distribution based on portfolio page views.</p><div class="rows" id="countries"></div></section>
-</div>
+<section class="panel" style="margin-top:14px"><h2>Most popular projects</h2><p>Projects visitors chose to open.</p><div class="rows" id="projects"></div></section>
 <details class="insights-advanced" id="advanced">
  <summary>Advanced Analytics <span class="subtle">Page details, engagement and opted-in browsers</span></summary>
  <div class="advanced-body">
@@ -75,7 +72,7 @@
   </div>
   <div class="layout">
    <section class="panel"><h2>New vs returning browsers</h2><p>Counts only browsers that agreed to optional analytics cookies.</p><div class="repeat-metrics" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px"><div class="scroll-step"><b id="new-browsers">—</b><small>New opted-in browsers</small></div><div class="scroll-step"><b id="consented-browsers">—</b><small>Distinct opted-in browsers</small></div></div><p class="subtle" id="repeat-explanation">Requires optional visitor consent.</p></section>
-   <section class="panel"><h2>Detailed traffic sources</h2><p>Referrer hostnames (not visitor identities).</p><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
+   <section class="panel"><h2>Countries and traffic sources</h2><p>Approximate countries and referring website domains.</p><div class="rows" id="countries"></div><hr class="thin-rule"><h2>Detailed traffic sources</h2><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
   </div>
  </div>
 </details>
@@ -106,15 +103,79 @@ function fillTrend(raw,hours,generatedAt){
  return results;
 }
 function plot(arr){const max=Math.max(1,...arr.map(v=>v.pageviews));const points=(arr.length?arr:[{pageviews:0}]).map((v,i)=>(15+(i*650/Math.max(arr.length-1,1))).toFixed(1)+','+(174-(v.pageviews/max)*142).toFixed(1)).join(' ');$('trend-line').setAttribute('points',points);$('trend-area').setAttribute('d','M'+points.replaceAll(' ',' L')+' L665,174 L15,174Z');$('date-label').textContent=arr.length?(arr[0].day+' — '+arr[arr.length-1].day):'No data';}
+function insight(text){
+ const li=document.createElement('li');li.textContent=text;$('insight-list').append(li);
+}
+function groupedSources(d){
+ const raw=Array.isArray(d.referrers)?d.referrers:[];
+ const counts={LinkedIn:0,Google:0,GitHub:0,Other:0};
+ for(const r of raw){
+  const host=String(r.referrer||'').toLowerCase();
+  const views=Math.max(0,Number(r.views)||0);
+  if(host==='linkedin.com'||host.endsWith('.linkedin.com')||host==='lnkd.in')counts.LinkedIn+=views;
+  else if(host==='google.com'||host.endsWith('.google.com'))counts.Google+=views;
+  else if(host==='github.com'||host.endsWith('.github.com'))counts.GitHub+=views;
+  else counts.Other+=views;
+ }
+ const total=Math.max(0,Number(d.summary?.pageviews)||0);
+ const named=counts.LinkedIn+counts.Google+counts.GitHub;
+ // The backend caps referrer hosts to 10. The remainder includes direct and unknown traffic.
+ counts.Other=Math.max(0,total-named);
+ return [['LinkedIn',counts.LinkedIn],['Google',counts.Google],['GitHub',counts.GitHub],['Other / unknown',counts.Other]];
+}
 function render(d,isDemo){
-const r=d.repeat||{};
-$('new-browsers').textContent=isDemo?'—':fmt(r.new_browsers);
-$('returning-visits').textContent=isDemo?'—':fmt(r.returning_visits);
-$('consented-browsers').textContent=isDemo?'—':fmt(r.distinct_consented_browsers);
-$('repeat-explanation').textContent=isDemo?'No simulated identity metrics; connect to live data.':'Only browsers granting optional repeat-visit consent are counted. Data starts when the feature is deployed.';
-const hours=Number($('range').value);
-$('trend-label').textContent=hours===0?'Monthly page views':hours===1?'5-minute page views':hours<=72?'Hourly page views':'Daily page views';
-$('visitors').textContent=fmt(d.summary.visitors);$('pageviews').textContent=fmt(d.summary.pageviews);$('duration').textContent=miniTime((Number(d.summary.active_ms)||0)/Math.max(1,Number(d.summary.sessions)||1));$('project-opens').textContent=fmt(d.summary.project_opens);plot(isDemo?d.daily||[]:fillTrend(d.daily||[],hours,d.generated_at));bars($('projects'),d.projects||[],x=>names[x.item]||x.item,x=>x.opens);const sections=$('sections');sections.replaceChildren();const sectionData=d.sections||[];const max=Math.max(1,...sectionData.map(x=>Number(x.active_ms)||0));for(const x of sectionData){const item=document.createElement('div');item.className='section-item';const label=document.createElement('span');label.textContent=x.section;const count=document.createElement('b');count.textContent=miniTime(x.active_ms);const track=document.createElement('span');track.className='track';const fill=document.createElement('i');fill.className='fill';fill.style.width=100*(Number(x.active_ms)||0)/max+'%';track.append(fill);item.append(label,count,track);sections.append(item)}if(!sectionData.length)sections.textContent='No section data yet';const sc=$('scroll');sc.replaceChildren();for(const n of [25,50,75,90]){const v=(d.scroll||[]).find(x=>Number(x.depth)===n);const item=document.createElement('div');item.className='scroll-step';const b=document.createElement('b');b.textContent=fmt(v?.sessions||0);const l=document.createElement('small');l.textContent=n+'% depth';item.append(b,l);sc.append(item)}bars($('filters'),d.filters||[],x=>x.item,x=>x.clicks);const pages=$('pages');pages.replaceChildren();for(const x of d.pages||[]){const tr=document.createElement('tr');const td=document.createElement('td');td.textContent=x.path;const v=document.createElement('td');v.textContent=fmt(x.views);tr.append(td,v);pages.append(tr)}bars($('countries'),d.countries||[],x=>x.country,x=>x.views);bars($('devices'),d.devices||[],x=>x.device,x=>x.views);bars($('referrers'),d.referrers||[],x=>x.referrer,x=>x.views);$('blogs').textContent=(d.summary.blog_opens||0)+' blog opening events';if(!d.summary.blog_opens)$('blogs').textContent='No blog opens recorded yet';$('blogs').className='empty';mode=isDemo?'demo':'live';$('dot').classList.toggle('live',!isDemo);$('status').textContent=isDemo?'Demo mode — fictional 30-day example; filters require live connection':'Live analytics — authenticated';$('updated').textContent=isDemo?'Not connected':'Updated '+new Date().toLocaleTimeString();$('demo').textContent=isDemo?'Demo active':'View demo';}
+ const summary=d.summary||{},repeat=d.repeat||{},hours=Number($('range').value);
+ const sources=groupedSources(d);
+ const linkedin=sources[0][1],pageviews=Math.max(0,Number(summary.pageviews)||0);
+ const projects=Array.isArray(d.projects)?d.projects:[];
+ const sortedProjects=[...projects].sort((a,b)=>(Number(b.opens)||0)-(Number(a.opens)||0));
+ $('visitors').textContent=fmt(summary.visitors);
+ $('linkedin-views').textContent=fmt(linkedin);
+ $('linkedin-share').textContent=pageviews?fmt(linkedin/pageviews*100)+'% of tracked page views':'No LinkedIn referrals recorded';
+ $('project-opens').textContent=fmt(summary.project_opens);
+ $('top-project').textContent=sortedProjects.length?'Top: '+(names[sortedProjects[0].item]||sortedProjects[0].item):'No project-link opens recorded';
+ $('returning-visits').textContent=isDemo?'—':fmt(repeat.returning_visits);
+ $('pageviews').textContent=fmt(summary.pageviews);
+ $('duration').textContent=miniTime((Number(summary.active_ms)||0)/Math.max(1,Number(summary.sessions)||1));
+ $('new-browsers').textContent=isDemo?'—':fmt(repeat.new_browsers);
+ $('consented-browsers').textContent=isDemo?'—':fmt(repeat.distinct_consented_browsers);
+ $('repeat-explanation').textContent=isDemo?'No fabricated repeat-visit data is displayed.':'Only consenting browsers are counted. This does not identify people.';
+ $('trend-label').textContent=hours===0?'Monthly tracked visits':hours===1?'5-minute tracked visits':hours<=72?'Hourly tracked visits':'Daily tracked visits';
+ plot(isDemo?(d.daily||[]):fillTrend(d.daily||[],hours,d.generated_at));
+ bars($('sources'),sources.map(([name,views])=>({name,views})),x=>x.name,x=>x.views);
+ bars($('projects'),sortedProjects,x=>names[x.item]||x.item,x=>x.opens);
+ const list=$('insight-list');list.replaceChildren();
+ if(isDemo){
+  insight('Demo only: these figures are fictional examples. Connect your Worker to see actual insights.');
+ }else{
+  if(pageviews===0)insight('No tracked page views were recorded in this period. Try a longer date range.');
+  else{
+   insight(fmt(summary.visitors)+' tracked page visit'+(Number(summary.visitors)===1?'':'s')+' and '+fmt(pageviews)+' page load'+(pageviews===1?'':'s')+' were recorded in this period.');
+   if(linkedin>0)insight('LinkedIn referred '+fmt(linkedin)+' page view'+(linkedin===1?'':'s')+' ('+Math.round(100*linkedin/pageviews)+'% of tracked page views). Some referrals may be hidden.');
+   else insight('No identifiable LinkedIn referrals were recorded; visitors may still arrive from LinkedIn with their referrer hidden.');
+   if(sortedProjects.length)insight('Your most-opened project was '+(names[sortedProjects[0].item]||sortedProjects[0].item)+' with '+fmt(sortedProjects[0].opens)+' tracked opening'+(Number(sortedProjects[0].opens)===1?'':'s')+'.');
+   else insight('No project openings were recorded in this period.');
+  }
+  if(Number(repeat.returning_visits)>0)insight(fmt(repeat.returning_visits)+' returning visit'+(Number(repeat.returning_visits)===1?' was':'s were')+' recognized among browsers that accepted analytics cookies.');
+  else insight('No returning visits were recognized among opted-in browsers in this period.');
+ }
+ const sections=$('sections');sections.replaceChildren();const sectionData=d.sections||[];const max=Math.max(1,...sectionData.map(x=>Number(x.active_ms)||0));
+ for(const x of sectionData){const item=document.createElement('div');item.className='section-item';const label=document.createElement('span');label.textContent=x.section;const count=document.createElement('b');count.textContent=miniTime(x.active_ms);const track=document.createElement('span');track.className='track';const fill=document.createElement('i');fill.className='fill';fill.style.width=100*(Number(x.active_ms)||0)/max+'%';track.append(fill);item.append(label,count,track);sections.append(item)}
+ if(!sectionData.length)sections.textContent='No section engagement data yet';
+ const sc=$('scroll');sc.replaceChildren();
+ for(const n of [25,50,75,90]){const v=(d.scroll||[]).find(x=>Number(x.depth)===n);const item=document.createElement('div');item.className='scroll-step';const b=document.createElement('b');b.textContent=fmt(v?.sessions||0);const l=document.createElement('small');l.textContent=n+'% depth';item.append(b,l);sc.append(item)}
+ bars($('filters'),d.filters||[],x=>x.item,x=>x.clicks);
+ const pages=$('pages');pages.replaceChildren();
+ for(const x of d.pages||[]){const tr=document.createElement('tr');const td=document.createElement('td');td.textContent=x.path;const v=document.createElement('td');v.textContent=fmt(x.views);tr.append(td,v);pages.append(tr)}
+ bars($('countries'),d.countries||[],x=>x.country,x=>x.views);
+ bars($('devices'),d.devices||[],x=>x.device,x=>x.views);
+ bars($('referrers'),d.referrers||[],x=>x.referrer,x=>x.views);
+ $('blogs').textContent=Number(summary.blog_opens)?fmt(summary.blog_opens)+' recorded blog-link opening events':'No blog openings recorded yet.';
+ mode=isDemo?'demo':'live';$('dot').classList.toggle('live',!isDemo);
+ $('status').textContent=isDemo?'Demo mode — fictional example; date filter requires a live connection':'Live analytics — authenticated';
+ $('updated').textContent=isDemo?'Not connected':'Updated '+new Date().toLocaleTimeString();
+ $('demo').textContent=isDemo?'Demo active':'View demo';
+}
 async function load(){
  if(!api||!secret)return;
  const version=++requestVersion;
