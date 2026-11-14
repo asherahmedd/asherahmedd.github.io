@@ -28,7 +28,7 @@ async function recordIdentity(db,id,secret){
  const now=new Date().toISOString();
  const prior=await db.prepare('SELECT first_seen FROM identity_visitors WHERE visitor_hash=?').bind(hash).first();
  await db.prepare('INSERT INTO identity_visitors(visitor_hash,first_seen,last_seen,visits) VALUES(?,?,?,1) ON CONFLICT(visitor_hash) DO UPDATE SET last_seen=excluded.last_seen,visits=visits+1').bind(hash,now,now).run();
- await db.prepare('INSERT INTO identity_visits(ts,visitor_hash,returning) VALUES(?,?,?)').bind(now,hash,prior?1:0).run();
+ await db.prepare('INSERT INTO identity_visits(ts,visitor_hash,is_returning) VALUES(?,?,?)').bind(now,hash,prior?1:0).run();
 }
 async function report(db,hours){
  const since=new Date(Date.now()-hours*3600000).toISOString();
@@ -46,7 +46,7 @@ async function report(db,hours){
  scroll:"SELECT depth,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='scroll_depth' AND depth>0 GROUP BY depth ORDER BY depth"};
  const keys=Object.keys(sql),rs=await Promise.all(keys.map(k=>db.prepare(sql[k]).bind(since).all()));
  let repeat={consented_visits:0,new_browsers:0,returning_visits:0,distinct_consented_browsers:0};
- try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
+ try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
  return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{} };
 }
 export default {
