@@ -691,6 +691,23 @@ html{scroll-padding-top:16px}
 }
 @media(max-width:440px){.compact-contact .contact-form-grid{grid-template-columns:1fr}}
 </style>
+<style id="contact-motion-polish">
+/* The whole heading is the control; no secondary Open pill. */
+.compact-contact .contact-trigger{min-height:78px;border-radius:12px;padding:4px 1px;transition:background-color .22s ease}
+.compact-contact .contact-trigger:hover .contact-trigger-title{color:#086ac9}
+.compact-contact .contact-trigger-title{transition:color .2s ease}
+.compact-contact .contact-trigger-action{width:39px;height:39px;min-width:39px;display:grid;place-items:center;border:1px solid #e4e9f1;background:#f8fafc;color:#4b647d;border-radius:12px;padding:0;transition:background-color .24s ease,color .24s ease,border-color .24s ease,transform .24s cubic-bezier(.2,.8,.2,1)}
+.compact-contact .contact-trigger:hover .contact-trigger-action{background:#eaf3ff;color:#086ac9;border-color:#cfe1f6;transform:translateY(-1px)}
+.compact-contact .contact-chevron{display:block;width:19px;height:19px;font-size:inherit;line-height:normal;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+.compact-contact[open] .contact-chevron{transform:rotate(180deg)}
+.compact-contact[open] .contact-trigger-action{background:#eaf3ff;color:#086ac9;border-color:#d5e6f9}
+.compact-contact{will-change:height}
+.compact-contact .contact-expanded{margin-top:8px;padding-top:15px}
+.compact-contact .contact-trigger:focus-visible{outline:2px solid #0071e3;outline-offset:3px}
+@media(min-width:701px){.compact-contact[open]{grid-column:auto}.compact-contact .contact-methods{grid-template-columns:1fr;gap:7px}.compact-contact .contact-form{grid-template-columns:1fr;grid-template-areas:"title" "names" "phone" "message" "submit" "note";gap:9px}.compact-contact .contact-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.compact-contact .contact-message-field textarea{height:auto;min-height:96px}.contact-method{padding:9px 10px}}
+@media(max-width:700px){.compact-contact .contact-trigger{min-height:65px}.compact-contact .contact-trigger-action{width:37px;height:37px;min-width:37px}}
+@media(prefers-reduced-motion:reduce){.compact-contact,.compact-contact *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
 <header class="top"><div class="shell"><a class="brand" href="#top">Muhammad Ashar.</a><nav class="nav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Contact</a><a href="https://github.com/asherahmedd" rel="noopener" target="_blank">GitHub ↗</a></nav><div class="mobmenu"><a aria-label="Jump to contact information" class="quick-contact" href="#contact">✉</a><a aria-label="GitHub profile" href="https://github.com/asherahmedd" rel="noopener" target="_blank"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.89c-2.77.6-3.36-1.18-3.36-1.18-.46-1.15-1.12-1.46-1.12-1.46-.91-.63.07-.62.07-.62 1.01.07 1.54 1.04 1.54 1.04.9 1.54 2.36 1.1 2.94.84.09-.65.35-1.1.64-1.35-2.21-.25-4.53-1.11-4.53-4.94 0-1.09.39-1.98 1.03-2.67-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.11 2.5.34 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.69 1.03 1.58 1.03 2.67 0 3.84-2.32 4.68-4.54 4.93.36.31.68.92.68 1.85V21c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg></a><button aria-expanded="false" aria-label="Toggle navigation" class="iconbtn" id="menubtn"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div></div><nav class="mobile-nav" id="mobilenav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a href="#contact">Contact</a><a href="https://github.com/asherahmedd">GitHub</a></nav></header>
@@ -709,7 +726,7 @@ html{scroll-padding-top:16px}
 <details class="contact-refined compact-contact" id="contact">
 <summary class="contact-trigger" aria-label="Expand contact options and message form">
  <span class="contact-trigger-copy"><span class="eyebrow">LET'S CONNECT</span><span class="contact-trigger-title">Get in touch<span class="soft-dot">.</span></span><span class="contact-trigger-sub">Email, WhatsApp or send a message</span></span>
- <span class="contact-trigger-action" aria-hidden="true">Open <span class="contact-chevron">⌄</span></span>
+ <span class="contact-trigger-action" aria-hidden="true"><svg class="contact-chevron" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
 </summary>
 <div class="contact-expanded">
  <p class="contact-unified-intro">For professional opportunities, technical discussions or collaborations, reach me directly or leave a message below.</p>
@@ -777,6 +794,34 @@ function render(){const v=visible();if(!v.some(p=>p.dataset.id===selected))selec
 })();
 </script>
 
+<script id="contact-accordion-motion">
+(()=>{
+ const panel=document.getElementById('contact');
+ if(!panel||panel.tagName!=='DETAILS')return;
+ const heading=panel.querySelector('summary');
+ const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+ let running=null;
+ heading.addEventListener('click',e=>{
+  if(reduced.matches||!panel.animate)return;
+  e.preventDefault();
+  if(running){running.finish();running=null}
+  const start=panel.getBoundingClientRect().height;
+  const isOpening=!panel.open;
+  if(isOpening)panel.open=true;
+  else panel.open=false;
+  const target=panel.getBoundingClientRect().height;
+  if(!isOpening)panel.open=true;
+  const animation=panel.animate([{height:start+'px'},{height:target+'px'}],{duration:isOpening?380:300,easing:'cubic-bezier(.22,1,.36,1)'});
+  running=animation;
+  animation.onfinish=()=>{
+   if(running!==animation)return;
+   panel.open=isOpening;
+   running=null;
+  };
+  animation.oncancel=()=>{if(running===animation)running=null};
+ });
+})();
+</script>
 <!-- Portfolio Insights: opt-in analytics -->
 <script defer src="/portfolio-insights/tracker.js" data-endpoint="https://ashar-portfolio-insights.asherahmedd.workers.dev"></script>
 </body></html>
