@@ -708,6 +708,26 @@ html{scroll-padding-top:16px}
 @media(max-width:700px){.compact-contact .contact-trigger{min-height:65px}.compact-contact .contact-trigger-action{width:37px;height:37px;min-width:37px}}
 @media(prefers-reduced-motion:reduce){.compact-contact,.compact-contact *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
+<style id="contact-visible-cta-v2">
+/* Make the action unmistakable without adding a separate button inside summary. */
+.compact-contact .contact-trigger{gap:15px;min-height:85px}
+.compact-contact .contact-trigger-action{width:auto;height:43px;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:12px;padding:0 15px 0 18px;border:1px solid #0066cb;border-radius:12px;background:#0877e8;color:#fff;box-shadow:0 5px 15px rgba(0,113,227,.17);font-size:12px;font-weight:750;letter-spacing:-.005em;white-space:nowrap;transform:none;transition:background-color .2s,border-color .2s,box-shadow .2s,transform .2s}
+.compact-contact .contact-trigger:hover .contact-trigger-action{background:#005ebc;color:#fff;border-color:#005ebc;box-shadow:0 8px 18px rgba(0,113,227,.23);transform:translateY(-1px)}
+.compact-contact .contact-trigger:active .contact-trigger-action{transform:translateY(0)}
+.compact-contact .contact-action-label{display:inline-flex;align-items:center}
+.compact-contact .contact-action-open{display:none}
+.compact-contact[open] .contact-action-open{display:inline}
+.compact-contact[open] .contact-action-closed{display:none}
+.compact-contact[open] .contact-trigger-action{background:#eef5ff;color:#0869ce;border-color:#c8defb;box-shadow:none}
+.compact-contact[open] .contact-trigger:hover .contact-trigger-action{background:#e1efff;color:#0056af}
+.compact-contact .contact-chevron{width:20px;height:20px;flex-shrink:0}
+@media(max-width:700px){
+ .compact-contact .contact-trigger{min-height:95px;flex-wrap:wrap;align-items:center;row-gap:12px}
+ .compact-contact .contact-trigger-copy{flex:1 1 100%}
+ .compact-contact .contact-trigger-action{flex:1 1 100%;width:100%;min-height:42px}
+}
+@media(max-width:370px){.compact-contact .contact-trigger{min-height:100px}}
+</style>
 </head>
 <body>
 <header class="top"><div class="shell"><a class="brand" href="#top">Muhammad Ashar.</a><nav class="nav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Contact</a><a href="https://github.com/asherahmedd" rel="noopener" target="_blank">GitHub ↗</a></nav><div class="mobmenu"><a aria-label="Jump to contact information" class="quick-contact" href="#contact">✉</a><a aria-label="GitHub profile" href="https://github.com/asherahmedd" rel="noopener" target="_blank"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.89c-2.77.6-3.36-1.18-3.36-1.18-.46-1.15-1.12-1.46-1.12-1.46-.91-.63.07-.62.07-.62 1.01.07 1.54 1.04 1.54 1.04.9 1.54 2.36 1.1 2.94.84.09-.65.35-1.1.64-1.35-2.21-.25-4.53-1.11-4.53-4.94 0-1.09.39-1.98 1.03-2.67-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.11 2.5.34 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.69 1.03 1.58 1.03 2.67 0 3.84-2.32 4.68-4.54 4.93.36.31.68.92.68 1.85V21c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg></a><button aria-expanded="false" aria-label="Toggle navigation" class="iconbtn" id="menubtn"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div></div><nav class="mobile-nav" id="mobilenav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a href="#contact">Contact</a><a href="https://github.com/asherahmedd">GitHub</a></nav></header>
@@ -726,7 +746,7 @@ html{scroll-padding-top:16px}
 <details class="contact-refined compact-contact" id="contact">
 <summary class="contact-trigger" aria-label="Expand contact options and message form">
  <span class="contact-trigger-copy"><span class="eyebrow">LET'S CONNECT</span><span class="contact-trigger-title">Get in touch<span class="soft-dot">.</span></span><span class="contact-trigger-sub">Email, WhatsApp or send a message</span></span>
- <span class="contact-trigger-action" aria-hidden="true"><svg class="contact-chevron" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+ <span class="contact-trigger-action" aria-hidden="true"><span class="contact-action-label"><span class="contact-action-closed">View contact &amp; message</span><span class="contact-action-open">Hide contact details</span></span><svg class="contact-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
 </summary>
 <div class="contact-expanded">
  <p class="contact-unified-intro">For professional opportunities, technical discussions or collaborations, reach me directly or leave a message below.</p>
