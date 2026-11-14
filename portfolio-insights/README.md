@@ -28,6 +28,14 @@ The frontend calls `GET /stats?hours=1|24|72|168|720`; legacy `?days=7|30|90` re
 
 **Visitors cannot be identified by name with this tracker**. It has no user names, LinkedIn identities, employer or person-level tracking. A volunteered contact method or a separately consented form would be needed to receive names.
 
+## Corrected date range behavior and All time
+
+The live dashboard supports Last 1 hour (5-minute buckets), Last 1 day and Last 3 days (hourly buckets), Last 1 week and Last 1 month (daily buckets), and **All time** (monthly buckets). Every API report uses the same cutoff on all KPIs, traffic sources, page activity, and consented visitor metrics.
+
+**All time** requests `GET /stats?hours=0`, retrieving all **retained** database records. Existing scheduled retention deletes events older than 90 days; this is not lifetime history after deletion. Invalid `hours` values return an HTTP 400 instead of silently falling back to 30 days. The dashboard validates the Worker-returned `hours` field and refuses mismatched results, so a stale Cloudflare Worker cannot mislabel 30-day data as one-hour traffic.
+
+**Action required**: publish the latest `worker/src/index.js` through **Cloudflare Workers & Pages → ashar-portfolio-insights → Edit Code → Deploy**. Updating GitHub alone updates the dashboard but **not** the deployed Worker. The dashboard's demo data is fictional 30-day data and deliberately does not respond to live date filters.
+
 ## Optional new versus returning browsers (consent-based)
 
 Basic, cookieless page analytics remains enabled as before. A separate, non-blocking choice appears for optional repeat-visit recognition:
