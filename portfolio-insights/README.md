@@ -20,6 +20,14 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 7. After publishing the privacy notice, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker measures page activity without a popup, and users can opt out on `privacy.html`. It avoids persistent visitor identifiers.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
+## Time filters (November 2026 update)
+
+The dashboard now offers **Last 1 hour, Last 1 day, Last 3 days, Last 1 week, Last 1 month**. These are rolling windows computed on the Worker at request time, not calendar-day boundaries. The chart aggregates into 5-minute intervals for one hour, hourly buckets for 1 or 3 days, and daily buckets for 1 week or 1 month. All other tables and KPIs use the selected same time window.
+
+The frontend calls `GET /stats?hours=1|24|72|168|720`; legacy `?days=7|30|90` remains supported. **Deploy the updated `worker/src/index.js` with `npx wrangler deploy` inside the existing Worker directory** before trying the new filters against live data. A GitHub Pages commit alone does not redeploy an existing Cloudflare Worker. No schema migration or tracker change is required. Demo mode contains fictional data and does not reflect real filter windows.
+
+**Visitors cannot be identified by name with this tracker**. It has no user names, LinkedIn identities, employer or person-level tracking. A volunteered contact method or a separately consented form would be needed to receive names.
+
 ## Privacy and security
 
 - No IP address, full user agent, query string, typed chat prompt, user email, session replay or fingerprint is collected.
