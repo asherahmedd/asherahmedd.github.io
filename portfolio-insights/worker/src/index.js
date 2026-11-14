@@ -16,11 +16,12 @@ function secretOkay(req,secret){
  if(!secret||token.length!==secret.length||token.length<20)return false;
  let diff=0;for(let i=0;i<token.length;i++)diff|=token.charCodeAt(i)^secret.charCodeAt(i);return diff===0;
 }
-async function report(db,days){
- const since=new Date(Date.now()-days*86400000).toISOString();
+async function report(db,hours){
+ const since=new Date(Date.now()-hours*3600000).toISOString();
+ const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72?"substr(ts,1,13)":"substr(ts,1,10)";
  const sql={
  summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(CASE WHEN event='session_active' THEN active_ms ELSE 0 END),0) active_ms FROM events WHERE ts>=?",
- daily:"SELECT substr(ts,1,10) day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY day ORDER BY day",
+ daily:`SELECT ${bucket} day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY day ORDER BY day`,
  pages:"SELECT path,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY path ORDER BY views DESC LIMIT 12",
  sections:"SELECT section,SUM(active_ms) active_ms,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='section_time' AND section<>'' GROUP BY section ORDER BY active_ms DESC LIMIT 15",
  projects:"SELECT item,COUNT(*) opens FROM events WHERE ts>=? AND event='project_open' AND item<>'' GROUP BY item ORDER BY opens DESC LIMIT 15",
@@ -50,8 +51,11 @@ export default {
    }
    if(req.method!=='GET')return reply({error:'method_not_allowed'},405,cors);
    if(!secretOkay(req,env.ADMIN_TOKEN))return reply({error:'unauthorized'},401,cors);
-   const q=Number(new URL(req.url).searchParams.get('days')||30);const days=[7,30,90].includes(q)?q:30;
-   try{return reply({days,generated_at:new Date().toISOString(),...await report(env.DB,days)},200,cors)}
+   const url=new URL(req.url);
+   const hoursParam=url.searchParams.get('hours');
+   const legacyDays=Number(url.searchParams.get('days')||30);
+   const hours=hoursParam!==null&&[1,24,72,168,720].includes(Number(hoursParam))?Number(hoursParam):([7,30,90].includes(legacyDays)?legacyDays*24:720);
+   try{return reply({hours,days:hours/24,generated_at:new Date().toISOString(),...await report(env.DB,hours)},200,cors)}
    catch{return reply({error:'storage_unavailable'},503,cors)}
   }
   return reply({error:'not_found'},404);
