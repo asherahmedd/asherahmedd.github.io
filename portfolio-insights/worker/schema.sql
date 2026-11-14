@@ -16,3 +16,20 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_events_ts ON events(ts);
 CREATE INDEX IF NOT EXISTS idx_events_type_ts ON events(event,ts);
 CREATE INDEX IF NOT EXISTS idx_events_session_ts ON events(session,ts);
+
+-- Optional consented repeat-visit measurement; raw browser IDs are never stored.
+CREATE TABLE IF NOT EXISTS identity_visitors (
+ visitor_hash TEXT PRIMARY KEY,
+ first_seen TEXT NOT NULL,
+ last_seen TEXT NOT NULL,
+ visits INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS identity_visits (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ ts TEXT NOT NULL,
+ visitor_hash TEXT NOT NULL,
+ returning INTEGER NOT NULL CHECK(returning IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_identity_visits_ts ON identity_visits(ts);
+CREATE INDEX IF NOT EXISTS idx_identity_visits_hash ON identity_visits(visitor_hash);
+CREATE INDEX IF NOT EXISTS idx_identity_visitors_last_seen ON identity_visitors(last_seen);
