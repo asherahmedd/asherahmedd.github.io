@@ -37,7 +37,8 @@ function identityVisit(){
  }
  fetch(base+'/identity',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({persistent_id:id,consent:true}),keepalive:true}).catch(()=>{});
 }
-function offerRepeatChoice(){
+async function offerRepeatChoice(){
+ try{const response=await fetch(base+'/health',{mode:'cors'});if(!response.ok||(await response.json())?.features?.repeat_visits!==true)return}catch{return}
  if(repeatRead(repeatChoice)==='yes'){identityVisit();return}
  if(repeatRead(repeatChoice)==='no')return;
  const show=()=>{
