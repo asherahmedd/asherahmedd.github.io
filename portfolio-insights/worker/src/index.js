@@ -31,8 +31,8 @@ async function recordIdentity(db,id,secret){
  await db.prepare('INSERT INTO identity_visits(ts,visitor_hash,is_returning) VALUES(?,?,?)').bind(now,hash,prior?1:0).run();
 }
 async function report(db,hours){
- const since=new Date(Date.now()-hours*3600000).toISOString();
- const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72?"substr(ts,1,13)":"substr(ts,1,10)";
+ const since=hours===0?'1970-01-01T00:00:00.000Z':new Date(Date.now()-hours*3600000).toISOString();
+ const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72&&hours>0?"substr(ts,1,13)":hours===0?"substr(ts,1,7)":"substr(ts,1,10)";
  const sql={
  summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(CASE WHEN event='session_active' THEN active_ms ELSE 0 END),0) active_ms FROM events WHERE ts>=?",
  daily:`SELECT ${bucket} day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY day ORDER BY day`,
@@ -77,9 +77,16 @@ export default {
    if(!secretOkay(req,env.ADMIN_TOKEN))return reply({error:'unauthorized'},401,cors);
    const url=new URL(req.url);
    const hoursParam=url.searchParams.get('hours');
-   const legacyDays=Number(url.searchParams.get('days')||30);
-   const hours=hoursParam!==null&&[1,24,72,168,720].includes(Number(hoursParam))?Number(hoursParam):([7,30,90].includes(legacyDays)?legacyDays*24:720);
-   try{return reply({hours,days:hours/24,generated_at:new Date().toISOString(),...await report(env.DB,hours)},200,cors)}
+   const legacyDays=url.searchParams.get('days');
+   let hours=720;
+   if(hoursParam!==null){
+    if(!/^(0|1|24|72|168|720)$/.test(hoursParam))return reply({error:'invalid_range',allowed_hours:[0,1,24,72,168,720]},400,cors);
+    hours=Number(hoursParam);
+   }else if(legacyDays!==null){
+    if(!/^(7|30|90)$/.test(legacyDays))return reply({error:'invalid_range'},400,cors);
+    hours=Number(legacyDays)*24;
+   }
+   try{return reply({hours,period:hours===0?'all_time':'rolling',days:hours===0?null:hours/24,generated_at:new Date().toISOString(),...await report(env.DB,hours)},200,cors)}
    catch{return reply({error:'storage_unavailable'},503,cors)}
   }
   return reply({error:'not_found'},404);
