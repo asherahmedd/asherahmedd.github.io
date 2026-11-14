@@ -52,7 +52,7 @@ async function report(db,hours){
 export default {
  async fetch(req,env){
   const path=new URL(req.url).pathname;
-  if(path==='/health')return reply({status:'ok',service:'portfolio-insights'});
+  if(path==='/health')return reply({status:'ok',service:'portfolio-insights',features:{repeat_visits:true}},200,cors);
   if(path==='/track'||path==='/stats'||path==='/identity'){
    if(req.headers.get('Origin')!==origin)return reply({error:'origin_not_allowed'},403);
    if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
