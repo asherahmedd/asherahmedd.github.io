@@ -19,7 +19,7 @@ function secretOkay(req,secret){
 async function report(db,days){
  const since=new Date(Date.now()-days*86400000).toISOString();
  const sql={
- summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(active_ms),0) active_ms FROM events WHERE ts>=?",
+ summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(CASE WHEN event='session_active' THEN active_ms ELSE 0 END),0) active_ms FROM events WHERE ts>=?",
  daily:"SELECT substr(ts,1,10) day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY day ORDER BY day",
  pages:"SELECT path,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY path ORDER BY views DESC LIMIT 12",
  sections:"SELECT section,SUM(active_ms) active_ms,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='section_time' AND section<>'' GROUP BY section ORDER BY active_ms DESC LIMIT 15",
