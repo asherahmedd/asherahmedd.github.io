@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS identity_visits (
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  ts TEXT NOT NULL,
  visitor_hash TEXT NOT NULL,
- returning INTEGER NOT NULL CHECK(returning IN (0,1))
+ is_returning INTEGER NOT NULL CHECK(is_returning IN (0,1))
 );
 CREATE INDEX IF NOT EXISTS idx_identity_visits_ts ON identity_visits(ts);
 CREATE INDEX IF NOT EXISTS idx_identity_visits_hash ON identity_visits(visitor_hash);
