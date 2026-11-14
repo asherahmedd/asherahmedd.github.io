@@ -20,6 +20,14 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 7. After publishing the privacy notice, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker measures page activity without a popup, and users can opt out on `privacy.html`. It avoids persistent visitor identifiers.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
+## Simple Insights dashboard (November 2026)
+
+The default dashboard has an executive overview with four cards: **Total Visits** (page-local tracked visits, not people), **LinkedIn Traffic** (page views referred by identifiable LinkedIn referrers), **Project Views** (recorded project-link openings) and **Returning Visits** (only opted-in browsers). Below these are plain-English observations and three charts: **Visits over time**, **Where visitors came from**, and **Most popular projects**.
+
+Detailed page loads, countries, devices, section time, scrolling, technology filters, blog interest, raw referring domains and other consented browser metrics are retained under the expandable **Advanced Analytics** section. No collection schema, API or Worker changes are required for this dashboard-only redesign.
+
+Referral results are based on hostname-level referrals; LinkedIn may suppress referrer information. **Other / unknown** includes direct, hidden and other referring sources and is not equivalent to direct visits. Demo numbers are fictional and remain explicitly labeled. Comparisons with a prior time period are intentionally not shown without a backend comparison dataset. All time-range filters and live API validation remain supported.
+
 ## Time filters (November 2026 update)
 
 The dashboard now offers **Last 1 hour, Last 1 day, Last 3 days, Last 1 week, Last 1 month**. These are rolling windows computed on the Worker at request time, not calendar-day boundaries. The chart aggregates into 5-minute intervals for one hour, hourly buckets for 1 or 3 days, and daily buckets for 1 week or 1 month. All other tables and KPIs use the selected same time window.
