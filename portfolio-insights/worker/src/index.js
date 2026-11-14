@@ -23,6 +23,24 @@ async function identityHash(id,secret){
  const digest=await crypto.subtle.digest('SHA-256',bytes);
  return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
 }
+function clientPlatform(ua){
+ const s=String(ua||'').slice(0,350);
+ const os=/android/i.test(s)?'Android':/iphone|ipad|ipod/i.test(s)?'iOS':/windows/i.test(s)?'Windows':/macintosh|mac os/i.test(s)?'macOS':/linux/i.test(s)?'Linux':'Other';
+ const browser=/edg\//i.test(s)?'Edge':/firefox\//i.test(s)?'Firefox':/crios\/|chrome\//i.test(s)?'Chrome':/safari\//i.test(s)?'Safari':'Other';
+ return {os,browser};
+}
+async function recordContext(db,req,data){
+ const cf=req.cf||{},platform=clientPlatform(req.headers.get('user-agent'));
+ const asn=Number(cf.asn),values=[
+  new Date().toISOString(),safe(cf.country||'Unknown',2)||'Unknown',
+  safe(cf.region||'Unknown',60)||'Unknown',safe(cf.city||'Unknown',60)||'Unknown',
+  safe(cf.timezone||'Unknown',50)||'Unknown',safe(cf.asOrganization||'Unknown',100)||'Unknown',
+  Number.isSafeInteger(asn)&&asn>=0?asn:0,
+  ['mobile','tablet','desktop'].includes(data.device)?data.device:'other',
+  platform.os,platform.browser,safe(data.referrer||'',100)
+ ];
+ await db.prepare('INSERT INTO visitor_context(ts,country,region,city,timezone,network_org,asn,device,os,browser,referrer) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(...values).run();
+}
 async function recordIdentity(db,id,secret){
  const hash=await identityHash(id,secret);
  const now=new Date().toISOString();
@@ -46,8 +64,26 @@ async function report(db,hours){
  scroll:"SELECT depth,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='scroll_depth' AND depth>0 GROUP BY depth ORDER BY depth"};
  const keys=Object.keys(sql),rs=await Promise.all(keys.map(k=>db.prepare(sql[k]).bind(since).all()));
  let repeat={consented_visits:0,new_browsers:0,returning_visits:0,distinct_consented_browsers:0};
+ const context={consented_context_visits:0,cities:[],regions:[],networks:[],timezones:[],browsers:[],operating_systems:[],devices:[],referrers:[]};
+ try{
+  const qs={
+   cities:"SELECT city, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND city<>'Unknown' GROUP BY city,country ORDER BY visits DESC LIMIT 15",
+   regions:"SELECT region, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND region<>'Unknown' GROUP BY region,country ORDER BY visits DESC LIMIT 15",
+   networks:"SELECT network_org, asn, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND network_org<>'Unknown' GROUP BY network_org,asn ORDER BY visits DESC LIMIT 15",
+   timezones:"SELECT timezone, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND timezone<>'Unknown' GROUP BY timezone ORDER BY visits DESC LIMIT 10",
+   browsers:"SELECT browser,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY browser ORDER BY visits DESC",
+   operating_systems:"SELECT os,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY os ORDER BY visits DESC",
+   devices:"SELECT device,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY device ORDER BY visits DESC",
+   referrers:"SELECT referrer,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND referrer<>'' GROUP BY referrer ORDER BY visits DESC LIMIT 10"
+  };
+  const entries=Object.entries(qs);
+  const results=await Promise.all(entries.map(([,query])=>db.prepare(query).bind(since).all()));
+  for(let i=0;i<entries.length;i++)context[entries[i][0]]=results[i].results||[];
+  const total=await db.prepare('SELECT COUNT(*) AS visits FROM visitor_context WHERE ts>=?').bind(since).first();
+  context.consented_context_visits=total?.visits||0;
+ }catch{/* Feature not deployed: preserve baseline analytics. */}
  try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
- return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{} };
+ return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context};
 }
 export default {
  async fetch(req,env){
@@ -61,7 +97,7 @@ export default {
     if(Number(req.headers.get('Content-Length')||0)>512)return reply({error:'payload_too_large'},413,cors);
     let data;try{data=await req.json()}catch{return reply({error:'invalid_json'},400,cors)}
     if(data?.consent!==true||typeof data?.persistent_id!=='string'||!/^[0-9a-f-]{36}$/i.test(data.persistent_id))return reply({error:'invalid_consented_id'},400,cors);
-    try{await recordIdentity(env.DB,data.persistent_id,env.ADMIN_TOKEN);return new Response(null,{status:204,headers:cors})}
+    try{await recordIdentity(env.DB,data.persistent_id,env.ADMIN_TOKEN);try{await recordContext(env.DB,req,data)}catch{/* Old database: repeat visit logging remains active. */}return new Response(null,{status:204,headers:cors})}
     catch{return reply({error:'identity_storage_unavailable'},503,cors)}
    }
    if(path==='/track'){
@@ -91,5 +127,5 @@ export default {
   }
   return reply({error:'not_found'},404);
  },
- async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run()}
+ async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run();try{await env.DB.prepare('DELETE FROM visitor_context WHERE ts<?').bind(cutoff).run()}catch{}}
 };
