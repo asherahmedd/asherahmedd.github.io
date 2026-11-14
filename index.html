@@ -607,53 +607,7 @@ html{scroll-padding-top:16px}
 .pf-gallery .pf-card .pf-bottom a::after{content:"";position:absolute;inset:0;z-index:2;border-radius:inherit}
 .pf-gallery .pf-card:focus-within{outline:3px solid #0071e3;outline-offset:3px}
 .pf-gallery .pf-card:hover .pf-bottom a{text-decoration:underline}
-</style><style id="portfolio-explorer-shadow-container">#work{overflow:visible!important;isolation:auto!important;padding-top:16px;padding-bottom:24px}#portfolio-project-explorer-root{display:block;max-width:100%}@media(max-width:700px){#work{overflow:visible!important}}</style><style>
-/* Contact inquiry form: match the portfolio's existing light, restrained UI. */
-.contact-form-wrap{margin-top:17px;padding-top:16px;border-top:1px solid #e8ebef}
-.contact-form-head{margin:0 0 12px;font-size:12px;font-weight:750;color:#253345}
-.contact-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.contact-field{display:flex;flex-direction:column;gap:5px;min-width:0}
-.contact-field.full{grid-column:1/-1}
-.contact-field label{font-size:10px;font-weight:700;color:#637084}
-.contact-field input,.contact-field textarea{width:100%;min-width:0;background:#fafbfc;border:1px solid #dfe5ec;border-radius:10px;padding:10px 11px;font:12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#1d1d1f;outline:0;transition:border-color .18s,box-shadow .18s}
-.contact-field textarea{min-height:98px;resize:vertical}
-.contact-field input:focus,.contact-field textarea:focus{border-color:#0071e3;box-shadow:0 0 0 3px #0071e31b}
-.contact-field input::placeholder,.contact-field textarea::placeholder{color:#a0a8b3}
-.contact-form-bottom{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:11px}
-.contact-form-note{font-size:10px;line-height:1.5;color:#7a8795;max-width:230px}
-.contact-submit{border:0;border-radius:10px;padding:11px 15px;background:#0071e3;color:#fff;font:700 12px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:pointer;white-space:nowrap}
-.contact-submit:hover{background:#0562bc}.contact-submit:disabled{opacity:.65;cursor:wait}
-.contact-form-status{margin:10px 0 0;font-size:11px;line-height:1.5;color:#36617c}
-.contact-form-status.error{color:#ad3d3d}
-.contact-honeypot{position:absolute!important;left:-10000px!important;opacity:0!important;pointer-events:none!important}
-@media(max-width:490px){.contact-form-grid{grid-template-columns:1fr}.contact-form-bottom{align-items:stretch;flex-direction:column}.contact-form-note{max-width:none}.contact-submit{width:100%}}
-</style>
-<style id="contact-layout-delivery-fix">
-/* Let both sections use the full available width rather than stretching a small
-   language card to match the height of the much taller contact form. */
-@media(min-width:701px){
-  .profile-bottom{grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
-  .languages-refined{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.5fr);column-gap:20px;align-items:center}
-  .languages-refined>.eyebrow,.languages-refined>.profile-card-head{grid-column:1/-1}
-  .languages-refined>.profile-card-head{margin-bottom:0}
-  .languages-refined>.language-tile{border-bottom:0;padding:6px 0}
-  .languages-refined>.language-path{margin-top:0}
-  .contact-refined{padding:28px 32px}
-  .contact-form-grid{gap:15px}
-  .contact-field textarea{min-height:125px}
-  .contact-form-note{max-width:none}
-}
-@media(min-width:701px) and (max-width:950px){
-  .languages-refined{grid-template-columns:1fr 1fr}
-  .languages-refined>.language-path{grid-column:1/-1}
-}
-</style>
-<style id="contact-form-backup-link">
-.contact-backup{margin:14px 0 0;padding-top:12px;border-top:1px solid #e8ebef;color:#6b7788;font-size:11px;line-height:1.6}
-.contact-backup a{color:#076ac7;font-weight:700;text-decoration:none}
-.contact-backup a:hover{text-decoration:underline}
-</style>
-</head>
+</style><style id="portfolio-explorer-shadow-container">#work{overflow:visible!important;isolation:auto!important;padding-top:16px;padding-bottom:24px}#portfolio-project-explorer-root{display:block;max-width:100%}@media(max-width:700px){#work{overflow:visible!important}}</style></head>
 <body>
 <header class="top"><div class="shell"><a class="brand" href="#top">Muhammad Ashar.</a><nav class="nav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a class="nav-contact" href="#contact">Contact</a><a href="https://github.com/asherahmedd" rel="noopener" target="_blank">GitHub ↗</a></nav><div class="mobmenu"><a aria-label="Jump to contact information" class="quick-contact" href="#contact">✉</a><a aria-label="GitHub profile" href="https://github.com/asherahmedd" rel="noopener" target="_blank"><svg fill="currentColor" height="18" viewbox="0 0 24 24" width="18"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.89c-2.77.6-3.36-1.18-3.36-1.18-.46-1.15-1.12-1.46-1.12-1.46-.91-.63.07-.62.07-.62 1.01.07 1.54 1.04 1.54 1.04.9 1.54 2.36 1.1 2.94.84.09-.65.35-1.1.64-1.35-2.21-.25-4.53-1.11-4.53-4.94 0-1.09.39-1.98 1.03-2.67-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82c.85 0 1.7.11 2.5.34 1.9-1.29 2.74-1.02 2.74-1.02.55 1.37.2 2.39.1 2.64.64.69 1.03 1.58 1.03 2.67 0 3.84-2.32 4.68-4.54 4.93.36.31.68.92.68 1.85V21c0 .26.18.58.69.48A10 10 0 0 0 12 2Z"></path></svg></a><button aria-expanded="false" aria-label="Toggle navigation" class="iconbtn" id="menubtn"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div></div><nav class="mobile-nav" id="mobilenav"><a href="#work">Projects</a><a href="#resources">Community</a><a href="#writing">Blog</a><a href="#journey">Journey</a><a href="#contact">Contact</a><a href="https://github.com/asherahmedd">GitHub</a></nav></header>
 <main class="shell" id="top">
@@ -675,27 +629,6 @@ html{scroll-padding-top:16px}
 <a class="contact-email" href="mailto:asherhamedd@hotmail.com"><span aria-hidden="true" class="contact-icon">✉</span><span><small>EMAIL</small><strong>asherhamedd@hotmail.com</strong></span><span aria-hidden="true" class="contact-arrow">↗</span></a>
 <div class="contact-phone"><span aria-hidden="true" class="contact-icon">☎</span><span><small>PHONE / WHATSAPP</small><strong>+966 55 605 8854</strong></span></div>
 <div class="contact-actions"><a class="contact-action whatsapp" href="https://wa.me/966556058854" rel="noopener noreferrer" target="_blank"><span aria-hidden="true">◉</span> WhatsApp <span aria-hidden="true">↗</span></a><a class="contact-action call" href="tel:+966556058854"><span aria-hidden="true">↗</span> Call</a></div>
-<div class="contact-form-wrap">
-  <h3 class="contact-form-head">Or leave me a message</h3>
-  <form id="portfolio-contact-form" action="https://formsubmit.co/asherhamedd@hotmail.com" method="POST">
-    <input type="hidden" name="_subject" value="New message from Muhammad Ashar's portfolio">
-    <input type="hidden" name="_template" value="table">
-    <input type="hidden" name="_url" value="https://asherahmedd.github.io/#contact">
-    <div class="contact-honeypot" aria-hidden="true"><label for="contact-website">Website</label><input id="contact-website" name="_honey" tabindex="-1" autocomplete="off"></div>
-    <div class="contact-form-grid">
-      <div class="contact-field full"><label for="contact-name">Your name *</label><input type="text" id="contact-name" name="name" placeholder="Full name" required maxlength="90" autocomplete="name"></div>
-      <div class="contact-field"><label for="contact-email">Email</label><input type="email" id="contact-email" name="email" placeholder="you@example.com" maxlength="150" autocomplete="email"></div>
-      <div class="contact-field"><label for="contact-phone">Phone / WhatsApp</label><input type="tel" id="contact-phone" name="phone" placeholder="+1 234 567 890" maxlength="35" autocomplete="tel"></div>
-      <div class="contact-field full"><label for="contact-message">Message *</label><textarea id="contact-message" name="message" placeholder="Tell me a little about what you'd like to discuss…" required minlength="10" maxlength="3000"></textarea></div>
-    </div>
-    <div class="contact-form-bottom">
-      <span class="contact-form-note">Provide an email or phone number so I can reply. Submission confirmation does not guarantee email delivery.</span>
-      <button class="contact-submit" id="contact-submit" type="submit">Send message ↗</button>
-    </div>
-    <p id="contact-form-status" class="contact-form-status" role="status" aria-live="polite" hidden></p>
-  </form>
-  <p class="contact-backup">Prefer a hosted contact form? <a href="https://formsubmit.co/el/vikugo" target="_blank" rel="noopener noreferrer">Use my verified message link ↗</a></p>
-</div>
 
 </section>
 </section><section aria-labelledby="resources-heading" class="resources-section" id="resources">
@@ -735,30 +668,6 @@ j.addEventListener('click',()=>{if(mobileJourney.matches)setJourney(!jl.classLis
 const projects=[...root.querySelectorAll('.project')],filters=[...root.querySelectorAll('.filter')],picker=root.getElementById('project-picker'),count=root.getElementById('jump-count'),dots=root.getElementById('dots'),status=root.getElementById('status');let selected='analytics';const mobile=()=>window.matchMedia('(max-width:700px)').matches;const visible=()=>projects.filter(p=>!p.hidden);const title=p=>p.querySelector('h2').textContent;
 function render(){const v=visible();if(!v.some(p=>p.dataset.id===selected))selected=v[0].dataset.id;v.forEach((p,i)=>{p.classList.toggle('card-focused',p.dataset.id===selected);p.classList.toggle('wide',!mobile()&&v.length%2===1&&i===v.length-1);p.querySelector('.number').textContent=String(i+1).padStart(2,'0')+' / '+String(v.length).padStart(2,'0')});picker.replaceChildren();v.forEach(p=>{const o=document.createElement('option');o.value=p.dataset.id;o.textContent=title(p);picker.append(o)});picker.value=selected;count.textContent=v.length+' '+(v.length===1?'project':'projects');status.textContent=count.textContent;dots.replaceChildren();v.forEach(p=>{const i=document.createElement('i');if(p.dataset.id===selected)i.className='on';dots.appendChild(i)});}function setFilter(f){filters.forEach(b=>{const yes=b.dataset.filter===f;b.classList.toggle('active',yes);b.setAttribute('aria-pressed',String(yes))});projects.forEach(p=>p.hidden=f!=='all'&&!p.dataset.cats.split(' ').includes(f));selected=visible()[0].dataset.id;render()}function shift(d){const v=visible(),idx=v.findIndex(p=>p.dataset.id===selected);selected=v[(idx+d+v.length)%v.length].dataset.id;render()}filters.forEach(b=>b.addEventListener('click',()=>setFilter(b.dataset.filter)));picker.addEventListener('change',()=>{selected=picker.value;render()});root.getElementById('prev').addEventListener('click',()=>shift(-1));root.getElementById('next').addEventListener('click',()=>shift(1));window.addEventListener('resize',render);render();
 
-})();
-</script>
-
-<script>
-/* Native FormSubmit delivery: the provider handles receipt and first-use activation. */
-(function(){
-  const form=document.getElementById('portfolio-contact-form');
-  if(!form)return;
-  const email=document.getElementById('contact-email');
-  const phone=document.getElementById('contact-phone');
-  const status=document.getElementById('contact-form-status');
-  form.addEventListener('submit',function(event){
-    if(!email.value.trim()&&!phone.value.trim()){
-      event.preventDefault();
-      status.hidden=false;
-      status.classList.add('error');
-      status.textContent='Enter an email address or phone number so I can reply.';
-      email.focus();
-      return;
-    }
-    /* Do not disable the submit control while the browser is performing a native POST.
-       The provider will display its own acknowledgement or activation screen. */
-    status.hidden=true;
-  });
 })();
 </script>
 
