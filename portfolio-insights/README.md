@@ -32,9 +32,9 @@ The frontend calls `GET /stats?hours=1|24|72|168|720`; legacy `?days=7|30|90` re
 
 Basic, cookieless page analytics remains enabled as before. A separate, non-blocking choice appears for optional repeat-visit recognition:
 
-- **Allow repeat-visit tracking:** stores a random browser ID locally, sends it only for the agreed purpose, and records a one-way digest on the server.
-- **No thanks:** does not create a persistent visitor identifier; baseline cookieless measurements continue.
-- **Withdraw:** visitors can revoke repeat-visit recognition at /portfolio-insights/privacy.html. This deletes the local ID and stops subsequent recognized visits. Previous records remain until 90-day retention cleanup.
+- **Allow analytics cookies:** sets an optional 90-day first-party browser cookie with a random ID, sends it only for the agreed purpose, and records a one-way digest on the server.
+- **Reject optional cookies:** does not create a persistent visitor identifier; baseline cookieless measurements continue.
+- **Withdraw:** visitors can revoke repeat-visit recognition at /portfolio-insights/privacy.html. This deletes the optional cookie and stops subsequent recognized visits. Previous records remain until 90-day retention cleanup.
 - The dashboard displays new consenting browsers, returning visits and distinct opted-in browsers within the selected period. It cannot reveal names, LinkedIn profiles or employers.
 
 ### Required Cloudflare deployment
@@ -73,4 +73,4 @@ Page views and page-local sessions (not unique people), scroll depth thresholds,
 - `GET /health` — public non-sensitive health check.
 ## Analytics without a consent popup
 
-The tracker uses ephemeral memory-only IDs and sends no persistent cookies or cross-page identity. A privacy notice and opt-out remain available at `/portfolio-insights/privacy.html`. This technical approach does not guarantee a consent exemption in every jurisdiction; confirm applicable local and visitor-region requirements before relying on it. The database still retains event-level information for up to the configured retention period.\n
+The baseline tracker uses ephemeral memory-only IDs and sends no persistent cookies or cross-page identity. A privacy notice and opt-out remain available at `/portfolio-insights/privacy.html`. This technical approach does not guarantee a consent exemption in every jurisdiction; confirm applicable local and visitor-region requirements before relying on it. The database still retains event-level information for up to the configured retention period.\n
