@@ -59,6 +59,25 @@
  <section class="panel"><h2>Where visitors came from</h2><p>Sources detected from referring websites. Missing sources are included as Other / unknown.</p><div class="rows" id="sources"></div></section>
 </div>
 <section class="panel" style="margin-top:14px"><h2>Most popular projects</h2><p>Projects visitors chose to open.</p><div class="rows" id="projects"></div></section>
+<details class="insights-advanced" id="visitor-intelligence" open>
+ <summary>Visitor Intelligence <span class="subtle">Location, network clues and devices</span></summary>
+ <div class="advanced-body">
+  <p class="section-description">Countries and referrers include all measured page views. More detailed city, region, network and browser breakdowns cover <strong>only people who accepted optional analytics cookies</strong>. These are approximate, aggregated network signals—not personal identities.</p>
+  <div class="layout">
+   <section class="panel"><h2>Countries</h2><p>Approximate countries for all tracked page views.</p><div class="rows" id="countries"></div></section>
+   <section class="panel"><h2>Cities</h2><p>Approximate cities for opted-in visits, not precise locations.</p><div class="rows" id="visitor-cities"></div></section>
+  </div>
+  <div class="layout">
+   <section class="panel"><h2>Regions</h2><p>State or region inferred from the network.</p><div class="rows" id="visitor-regions"></div></section>
+   <section class="panel"><h2>Internet network / ISP</h2><p>Cloudflare ASN organization. <strong>This is not the visitor's verified employer.</strong> It may name an ISP, VPN, hosting provider or company network.</p><div class="rows" id="visitor-networks"></div></section>
+  </div>
+  <div class="layout">
+   <section class="panel"><h2>Browser and operating system</h2><p>Broad categories only. Full user-agent details are not stored.</p><div class="rows" id="visitor-browsers"></div><hr class="thin-rule"><div class="rows" id="visitor-os"></div></section>
+   <section class="panel"><h2>Device and timezone</h2><p>Grouped device types and approximate network timezones for opted-in visits.</p><div class="rows" id="visitor-devices"></div><hr class="thin-rule"><div class="rows" id="visitor-timezones"></div></section>
+  </div>
+  <section class="panel" style="margin-top:14px"><h2>Sources for opted-in visits</h2><p>Only referring hostnames, never personal LinkedIn profile URLs.</p><div class="rows" id="visitor-referrers"></div><p class="subtle" id="visitor-context-note">Detailed visitor information begins only after the Cloudflare update and visitor consent.</p></section>
+ </div>
+</details>
 <details class="insights-advanced" id="advanced">
  <summary>Advanced Analytics <span class="subtle">Page details, engagement and opted-in browsers</span></summary>
  <div class="advanced-body">
@@ -72,7 +91,7 @@
   </div>
   <div class="layout">
    <section class="panel"><h2>New vs returning browsers</h2><p>Counts only browsers that agreed to optional analytics cookies.</p><div class="repeat-metrics" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px"><div class="scroll-step"><b id="new-browsers">—</b><small>New opted-in browsers</small></div><div class="scroll-step"><b id="consented-browsers">—</b><small>Distinct opted-in browsers</small></div></div><p class="subtle" id="repeat-explanation">Requires optional visitor consent.</p></section>
-   <section class="panel"><h2>Countries and traffic sources</h2><p>Approximate countries and referring website domains.</p><div class="rows" id="countries"></div><hr class="thin-rule"><h2>Detailed traffic sources</h2><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
+   <section class="panel"><h2>Detailed traffic sources</h2><p>Referring domains for all tracked visits.</p><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
   </div>
  </div>
 </details>
@@ -123,6 +142,22 @@ function groupedSources(d){
  counts.Other=Math.max(0,total-named);
  return [['LinkedIn',counts.LinkedIn],['Google',counts.Google],['GitHub',counts.GitHub],['Other / unknown',counts.Other]];
 }
+function visitorBreakdowns(d,isDemo){
+ const ctx=d.context||{},list=[
+  ['visitor-cities','cities',x=>(x.city||'Unknown')+', '+(x.country||'')],
+  ['visitor-regions','regions',x=>(x.region||'Unknown')+', '+(x.country||'')],
+  ['visitor-networks','networks',x=>x.network_org||'Unknown'],
+  ['visitor-browsers','browsers',x=>x.browser||'Other'],
+  ['visitor-os','operating_systems',x=>x.os||'Other'],
+  ['visitor-devices','devices',x=>x.device||'Other'],
+  ['visitor-timezones','timezones',x=>x.timezone||'Unknown'],
+  ['visitor-referrers','referrers',x=>x.referrer||'Unknown']
+ ];
+ for(const [id,key,display] of list){
+  bars($(id),isDemo?[]:(ctx[key]||[]),display,x=>x.visits);
+ }
+ $('visitor-context-note').textContent=isDemo?'Demo data does not represent any real visitors.':Number(ctx.consented_context_visits)>0?fmt(ctx.consented_context_visits)+' opted-in visits provided detailed network context in this period. Some location fields may be unavailable.':'No detailed opted-in visitor context yet. Requires the Cloudflare schema and Worker update, plus visitor consent.';
+}
 function render(d,isDemo){
  const summary=d.summary||{},repeat=d.repeat||{},hours=Number($('range').value);
  const sources=groupedSources(d);
@@ -168,6 +203,7 @@ function render(d,isDemo){
  const pages=$('pages');pages.replaceChildren();
  for(const x of d.pages||[]){const tr=document.createElement('tr');const td=document.createElement('td');td.textContent=x.path;const v=document.createElement('td');v.textContent=fmt(x.views);tr.append(td,v);pages.append(tr)}
  bars($('countries'),d.countries||[],x=>x.country,x=>x.views);
+ visitorBreakdowns(d,isDemo);
  bars($('devices'),d.devices||[],x=>x.device,x=>x.views);
  bars($('referrers'),d.referrers||[],x=>x.referrer,x=>x.views);
  $('blogs').textContent=Number(summary.blog_opens)?fmt(summary.blog_opens)+' recorded blog-link opening events':'No blog openings recorded yet.';
