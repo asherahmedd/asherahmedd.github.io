@@ -1,0 +1,9 @@
+name = "ashar-portfolio-insights"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+[triggers]
+crons = ["0 3 * * *"]
+[[d1_databases]]
+binding = "DB"
+database_name = "portfolio-insights"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
