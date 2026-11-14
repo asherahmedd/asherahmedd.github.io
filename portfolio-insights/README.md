@@ -20,6 +20,23 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 7. After publishing the privacy notice, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker measures page activity without a popup, and users can opt out on `privacy.html`. It avoids persistent visitor identifiers.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
+## Visitor Intelligence: detailed analytics with explicit consent
+
+The expanded **Visitor Intelligence** section displays country-level aggregate traffic from baseline measurements, plus the following optional, consent-based summaries: approximate city, region, timezone, internet network operator (Cloudflare ASN organization and ASN), broad browser, operating system and device categories, and referring website hostname.
+
+**Network organization is NOT verified employment.** Most visitors may appear under an ISP, mobile carrier, VPN, hosting service, or public Wi-Fi provider. The data cannot identify a real person's name, LinkedIn profile or employer.
+
+To protect visitor privacy, `visitor_context` deliberately stores no raw IP address, visitor hash, detailed user agent, email address or full referrer URL. Its results are aggregated by category; data is collected only from browser visits after accepting the updated **Allow analytics cookies** choice. Earlier opt-ins must reconfirm the expanded scope. The existing cookieless page tracking and opt-out continue without change.
+
+### Cloudflare deployment for the enhanced visitor section (no Node.js)
+
+1. In your existing **D1 database `portfolio-insights` → Console**, execute the statements in [visitor-context-migration.sql](worker/visitor-context-migration.sql). They use `CREATE TABLE IF NOT EXISTS`, preserving previous analytics.
+2. In **Workers & Pages → ashar-portfolio-insights → Edit Code**, copy the updated [worker/src/index.js](worker/src/index.js) from GitHub, replace the Worker code and click **Deploy**.
+3. Refresh the portfolio and use a fresh browser to **Allow analytics cookies**. Revisit the same browser to generate context data.
+4. Open the authenticated [Portfolio Insights dashboard](https://asherahmedd.github.io/portfolio-insights/), select your period, and expand **Visitor Intelligence**.
+
+If the new table is not yet deployed, baseline metrics continue working; detailed visitor breakdowns remain empty. No historical city/network context can be reconstructed from earlier anonymous traffic. Location fields can be absent, approximate or affected by VPNs. Existing retention cleanup purges visitor context after 90 days.
+
 ## Simple Insights dashboard (November 2026)
 
 The default dashboard has an executive overview with four cards: **Total Visits** (page-local tracked visits, not people), **LinkedIn Traffic** (page views referred by identifiable LinkedIn referrers), **Project Views** (recorded project-link openings) and **Returning Visits** (only opted-in browsers). Below these are plain-English observations and three charts: **Visits over time**, **Where visitors came from**, and **Most popular projects**.
