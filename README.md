@@ -4,6 +4,16 @@
 
 Personal portfolio covering solution architecture, data engineering, enterprise analytics, planning applications, and intelligent automation. The site presents selected implementation work, engineering practices, and technical articles.
 
+## Open-source community contribution
+
+**[Portfolio Starter + Live Analytics](open-source/portfolio-starter/README.md)** — a reusable, MIT-licensed portfolio kit with a browser-based setup wizard, mobile-responsive personal site, projects and direct contact links, privacy-aware page tracking, Cloudflare Worker + D1 collection, a protected live analytics dashboard and step-by-step setup instructions.
+
+- [Try the profile setup wizard](open-source/portfolio-starter/setup.html)
+- [Explore the starter source](open-source/portfolio-starter/)
+- [Read deployment instructions](open-source/portfolio-starter/README.md)
+
+The full source of this personal portfolio and its existing analytics implementation also remains publicly available in this repository.
+
 ## Featured work
 
 | Project | Focus |
