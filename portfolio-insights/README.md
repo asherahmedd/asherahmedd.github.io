@@ -28,6 +28,26 @@ The frontend calls `GET /stats?hours=1|24|72|168|720`; legacy `?days=7|30|90` re
 
 **Visitors cannot be identified by name with this tracker**. It has no user names, LinkedIn identities, employer or person-level tracking. A volunteered contact method or a separately consented form would be needed to receive names.
 
+## Optional new versus returning browsers (consent-based)
+
+Basic, cookieless page analytics remains enabled as before. A separate, non-blocking choice appears for optional repeat-visit recognition:
+
+- **Allow repeat-visit tracking:** stores a random browser ID locally, sends it only for the agreed purpose, and records a one-way digest on the server.
+- **No thanks:** does not create a persistent visitor identifier; baseline cookieless measurements continue.
+- **Withdraw:** visitors can revoke repeat-visit recognition at /portfolio-insights/privacy.html. This deletes the local ID and stops subsequent recognized visits. Previous records remain until 90-day retention cleanup.
+- The dashboard displays new consenting browsers, returning visits and distinct opted-in browsers within the selected period. It cannot reveal names, LinkedIn profiles or employers.
+
+### Required Cloudflare deployment
+
+1. Open the existing portfolio-insights/worker directory.
+2. Run: npx wrangler d1 execute portfolio-insights --remote --file=schema.sql
+3. Run: npx wrangler deploy
+4. Open the public site and test opt-in recognition in a browser, then revisit and refresh the private Insights dashboard.
+
+CREATE TABLE IF NOT EXISTS protects existing analytics data. The worker keeps baseline stats available before the new database tables are deployed. GitHub Pages updates do not redeploy Cloudflare Workers automatically.
+
+The dashboard's /stats response includes repeat.new_browsers, repeat.returning_visits, repeat.consented_visits and repeat.distinct_consented_browsers. These are consenting browser counts, not actual distinct people. The /identity endpoint receives an opted-in random UUID over HTTPS and stores a salted SHA-256 digest, not the raw value. Keep ADMIN_TOKEN secret. This is pseudonymous data, so review applicable legal requirements.
+
 ## Privacy and security
 
 - No IP address, full user agent, query string, typed chat prompt, user email, session replay or fingerprint is collected.
