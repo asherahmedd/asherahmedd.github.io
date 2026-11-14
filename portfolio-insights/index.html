@@ -18,26 +18,67 @@
 @media(max-width:800px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.form-grid{grid-template-columns:1fr}.form-grid button{padding:12px}.heading{align-items:start;flex-direction:column}}
 @media(max-width:480px){.wrap{padding:24px 14px 45px}.top-inner{padding:0 14px;height:62px}.top-links{gap:8px}.top-links a:first-child{display:none}.heading h1{font-size:31px}.metric{padding:15px}.metric strong{font-size:27px}.panel{padding:17px}.kpis{gap:8px}.bar-row{grid-template-columns:minmax(75px,.9fr) minmax(0,1.5fr) 34px;gap:7px}.scroll-grid{gap:5px}.scroll-step{padding:13px 4px}.scroll-step b{font-size:18px}.scroll-step small{font-size:9px}.footer{display:block}.connection .status-details{display:none}}
 </style>
+<style id="insights-executive-view">
+.executive-title{font-size:17px;letter-spacing:-.025em;margin:23px 0 10px}
+.section-description{color:#6e7b8c;font-size:12px;margin:0 0 13px}
+.kpis .metric small{line-height:1.5}
+.metric-label{font-weight:650}
+.metric .metric-help{font-size:10px;color:#788697;line-height:1.5;margin-top:9px}
+.insight-list{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:9px}
+.insight-list li{display:flex;gap:10px;align-items:flex-start;background:#f6f9fd;border:1px solid #e9eff7;border-radius:12px;padding:11px 13px;color:#43536a;font-size:12px;line-height:1.5}
+.insight-list li:before{content:"•";font-size:19px;line-height:16px;color:#1870d2}
+.insights-advanced{margin-top:18px;border:1px solid var(--line);background:#fff;border-radius:18px;padding:0}
+.insights-advanced>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:20px 22px;font-size:15px;font-weight:750}
+.insights-advanced>summary::-webkit-details-marker{display:none}
+.insights-advanced>summary:after{content:"+";font-size:24px;color:#6b7c90;font-weight:400}
+.insights-advanced[open]>summary:after{content:"−"}
+.insights-advanced .advanced-body{padding:0 18px 18px}
+.insights-advanced .layout:first-child{margin-top:0}
+.empty-small{font-size:12px;color:#8b98a9}
+@media(max-width:650px){.insights-advanced>summary{padding:16px}.insights-advanced .advanced-body{padding:0 12px 13px}}
+</style>
 </head>
 <body>
 <header class="top"><div class="top-inner"><a class="brand" href="/">Muhammad Ashar<span>.</span> <span style="color:#6e6e73;font-size:12px;font-weight:550">Insights</span></a><nav class="top-links"><a href="/">Portfolio</a><a href="https://github.com/asherahmedd" target="_blank" rel="noopener">GitHub ↗</a></nav></div></header>
 <main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><select id="range" aria-label="Date range"><option value="1">Last 1 hour</option><option value="24">Last 1 day</option><option value="72">Last 3 days</option><option value="168">Last 1 week</option><option value="720" selected>Last 1 month</option><option value="0">All time (stored history)</option></select><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
 <div class="connection"><span class="dot" id="dot"></span><span id="status">Demo mode — no real visitor data</span><span class="status-details" id="updated">Awaiting API connection</span></div>
-<div class="kpis"><div class="metric"><div class="metric-label">Tracked visits</div><strong id="visitors">—</strong><small>Page-local visits; not unique people</small></div><div class="metric"><div class="metric-label">Page views</div><strong id="pageviews">—</strong><small>Across portfolio, projects and blogs</small></div><div class="metric"><div class="metric-label">Avg. active time / session</div><strong id="duration">—</strong><small>Approximate activity per page visit</small></div><div class="metric"><div class="metric-label">Project opens</div><strong id="project-opens">—</strong><small>Clicks opening your project pages</small></div></div>
-<section class="panel" aria-label="Optional returning visitor statistics" style="margin-top:14px">
-<div class="panel-heading"><h2>New vs returning browsers</h2><span class="subtle">Only visitors who explicitly allowed recognition</span></div>
-<p>These figures count opted-in browser visits, not people. Basic cookieless page views are shown separately above.</p>
-<div class="repeat-metrics" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px">
-<div class="scroll-step"><b id="new-browsers">—</b><small>New consenting browsers</small></div>
-<div class="scroll-step"><b id="returning-visits">—</b><small>Returning visits</small></div>
-<div class="scroll-step"><b id="consented-browsers">—</b><small>Distinct opted-in browsers in period</small></div>
-</div><p class="subtle" id="repeat-explanation">Numbers become available after the database migration and Cloudflare Worker deployment.</p></section>
-<style>@media(max-width:550px){.repeat-metrics{grid-template-columns:1fr!important}}</style>
-<div class="layout"><section class="panel"><div class="panel-heading"><h2>Visitor trend</h2><span class="subtle" id="trend-label">Daily page views</span></div><p>How portfolio traffic changes across the selected period.</p><svg class="trend" viewBox="0 0 680 210" preserveAspectRatio="none" aria-label="Pageviews over time"><path class="grid-line" d="M15 30H668 M15 78H668 M15 126H668 M15 174H668"/><path id="trend-area" class="area" d="M15 174L668 174Z"/><polyline class="spark" id="trend-line" points="15,174 668,174"/></svg><div class="subtle" id="date-label">Date range</div></section>
-<section class="panel"><h2>Project interest</h2><p>Which technical projects visitors open.</p><div class="rows" id="projects"></div></section></div>
-<div class="layout"><section class="panel"><h2>Section engagement</h2><p>Approximate active time when each section is in view.</p><div class="section-chart" id="sections"></div></section><section class="panel"><h2>Scroll depth</h2><p>Sessions reaching each portion of a page.</p><div class="scroll-grid" id="scroll"></div><hr class="thin-rule"><h2>Technology filter clicks</h2><p>Topics that visitors actively explore.</p><div class="rows" id="filters"></div></section></div>
-<div class="layout"><section class="panel"><h2>Most viewed pages</h2><p>Home, project and technical writing page traffic.</p><table class="table"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody id="pages"></tbody></table></section><section class="panel"><h2>Audience overview</h2><p>Approximate country and device breakdown.</p><div class="rows" id="countries"></div><hr class="thin-rule"><div class="rows" id="devices"></div></section></div>
-<div class="layout"><section class="panel"><h2>Traffic sources</h2><p>Referring domains, not individual visitor identities.</p><div class="rows" id="referrers"></div></section><section class="panel"><h2>Blog interest</h2><p>View traffic and writing engagement through page reports.</p><div id="blogs" class="empty">No blog opens recorded yet.</div></section></div>
+<h2 class="executive-title">At a glance</h2>
+<p class="section-description">Understand your portfolio traffic without needing to interpret technical events. All numbers use your selected date range.</p>
+<div class="kpis">
+ <div class="metric"><div class="metric-label">Total Visits</div><strong id="visitors">—</strong><small>Tracked page visits</small><div class="metric-help">Not unique people; repeated page loads count again.</div></div>
+ <div class="metric"><div class="metric-label">LinkedIn Traffic</div><strong id="linkedin-views">—</strong><small id="linkedin-share">Page views referred by LinkedIn</small><div class="metric-help">Referrer may be hidden by LinkedIn or the browser.</div></div>
+ <div class="metric"><div class="metric-label">Project Views</div><strong id="project-opens">—</strong><small id="top-project">Recorded project-link opens</small><div class="metric-help">This measures tracked project openings, not unique readers.</div></div>
+ <div class="metric"><div class="metric-label">Returning Visits</div><strong id="returning-visits">—</strong><small>Browsers allowing analytics cookies</small><div class="metric-help">Only consenting browsers; not all returning people.</div></div>
+</div>
+<section class="panel" style="margin-top:14px" aria-label="Insights summary">
+ <div class="panel-heading"><h2>What happened on your portfolio?</h2><span class="subtle">Plain-English insights</span></div>
+ <ul class="insight-list" id="insight-list"><li>Connect your analytics to see insights based on real traffic.</li></ul>
+</section>
+<div class="layout">
+ <section class="panel"><div class="panel-heading"><h2>Visits over time</h2><span class="subtle" id="trend-label">Daily page visits</span></div><p>See when your portfolio attracted visitors.</p><svg class="trend" viewBox="0 0 680 210" preserveAspectRatio="none" aria-label="Tracked visits over time"><path class="grid-line" d="M15 30H668 M15 78H668 M15 126H668 M15 174H668"/><path id="trend-area" class="area" d="M15 174L668 174Z"/><polyline class="spark" id="trend-line" points="15,174 668,174"/></svg><div class="subtle" id="date-label">Date range</div></section>
+ <section class="panel"><h2>Where visitors came from</h2><p>Sources detected from referring websites. Missing sources are included as Other / unknown.</p><div class="rows" id="sources"></div></section>
+</div>
+<div class="layout">
+ <section class="panel"><h2>Most popular projects</h2><p>Projects visitors chose to open.</p><div class="rows" id="projects"></div></section>
+ <section class="panel"><h2>Countries</h2><p>Approximate location distribution based on portfolio page views.</p><div class="rows" id="countries"></div></section>
+</div>
+<details class="insights-advanced" id="advanced">
+ <summary>Advanced Analytics <span class="subtle">Page details, engagement and opted-in browsers</span></summary>
+ <div class="advanced-body">
+  <div class="layout">
+   <section class="panel"><h2>Pages Opened</h2><p>Page loads across your portfolio, projects and blog articles.</p><div class="metric" style="margin-bottom:11px"><strong id="pageviews">—</strong><small>Total page loads</small></div><table class="table"><thead><tr><th>Page</th><th>Views</th></tr></thead><tbody id="pages"></tbody></table></section>
+   <section class="panel"><h2>Visitor activity</h2><p>Estimated activity, not proof of reading.</p><div class="metric" style="margin-bottom:12px"><div class="metric-label">Average Time Spent</div><strong id="duration">—</strong><small>Approximate active time per page-local session</small></div><h2>Devices</h2><div class="rows" id="devices"></div></section>
+  </div>
+  <div class="layout">
+   <section class="panel"><h2>Section engagement</h2><p>Approximate active time per portfolio section.</p><div class="section-chart" id="sections"></div></section>
+   <section class="panel"><h2>How far people scrolled</h2><p>Page sessions reaching each scroll threshold.</p><div class="scroll-grid" id="scroll"></div><hr class="thin-rule"><h2>Technology filter clicks</h2><div class="rows" id="filters"></div></section>
+  </div>
+  <div class="layout">
+   <section class="panel"><h2>New vs returning browsers</h2><p>Counts only browsers that agreed to optional analytics cookies.</p><div class="repeat-metrics" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px"><div class="scroll-step"><b id="new-browsers">—</b><small>New opted-in browsers</small></div><div class="scroll-step"><b id="consented-browsers">—</b><small>Distinct opted-in browsers</small></div></div><p class="subtle" id="repeat-explanation">Requires optional visitor consent.</p></section>
+   <section class="panel"><h2>Detailed traffic sources</h2><p>Referrer hostnames (not visitor identities).</p><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
+  </div>
+ </div>
+</details>
 <section class="setup"><h2>Connect your private analytics database</h2><p>The interface is hosted separately from your portfolio pages. Real data requires a deployed Cloudflare Worker, its D1 database and an administrator token. The token is never embedded in your public website.</p><form id="connect" class="form-grid"><input id="endpoint" type="url" placeholder="https://your-worker.workers.dev" autocomplete="url" required aria-label="Cloudflare Worker endpoint"><input id="token" type="password" placeholder="Private admin token" autocomplete="off" required aria-label="Private admin token"><button type="submit">Connect analytics</button></form><div class="hint">Endpoint is remembered only on your device. Admin token is held in page memory, not stored or uploaded to GitHub. The live dashboard is accessible only after successful authorization.</div></section>
 <div class="footer"><span>Portfolio Insights · Private analytics viewer</span><span>Illustrative numbers are always labeled as demo.</span></div></main>
 <script>
