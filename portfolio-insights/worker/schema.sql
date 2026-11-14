@@ -33,3 +33,21 @@ CREATE TABLE IF NOT EXISTS identity_visits (
 CREATE INDEX IF NOT EXISTS idx_identity_visits_ts ON identity_visits(ts);
 CREATE INDEX IF NOT EXISTS idx_identity_visits_hash ON identity_visits(visitor_hash);
 CREATE INDEX IF NOT EXISTS idx_identity_visitors_last_seen ON identity_visitors(last_seen);
+
+-- Aggregated reporting attributes from visits that opted into analytics cookies.
+-- Deliberately no raw IP, full user agent, personal name or visitor hash in this table.
+CREATE TABLE IF NOT EXISTS visitor_context (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ ts TEXT NOT NULL,
+ country TEXT NOT NULL DEFAULT 'Unknown',
+ region TEXT NOT NULL DEFAULT 'Unknown',
+ city TEXT NOT NULL DEFAULT 'Unknown',
+ timezone TEXT NOT NULL DEFAULT 'Unknown',
+ network_org TEXT NOT NULL DEFAULT 'Unknown',
+ asn INTEGER NOT NULL DEFAULT 0,
+ device TEXT NOT NULL DEFAULT 'other',
+ os TEXT NOT NULL DEFAULT 'Other',
+ browser TEXT NOT NULL DEFAULT 'Other',
+ referrer TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_visitor_context_ts ON visitor_context(ts);
