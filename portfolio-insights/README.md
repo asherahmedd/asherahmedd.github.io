@@ -20,6 +20,18 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 7. After publishing the privacy notice, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker measures page activity without a popup, and users can opt out on `privacy.html`. It avoids persistent visitor identifiers.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
+## Interactive time-window selector (November 2026)
+
+The dashboard's date filter is now a compact **Explore a time window** panel. It offers:
+
+- Quick presets: **1 hour, 24 hours, 7 days, 30 days, All time**.
+- A rolling lookback slider: **1, 3, 6, 12, 24, 72, 168, 336, 720 or 2160 hours** (up to 90 days).
+- Custom **From** and **To** date-and-time fields in the viewer's local timezone, converted to ISO UTC timestamps for API requests; the maximum custom span is 90 days.
+- The selected window is sent to `/stats` using either `?hours=N` or `?from=ISO&to=ISO`; response range metadata is validated before showing any live KPIs or charts.
+- All data categories and journey reporting use the same inclusive start and exclusive end (`ts >= from AND ts < to`). Time-series resolution is 5 minutes for windows up to one hour, hourly through 72 hours, daily for longer rolling/custom windows, and monthly for all-time history.
+
+**One-time action:** Publish the latest [Worker source](worker/src/index.js) through your existing Cloudflare Worker editor. No new D1 database tables are required for time-window filtering. GitHub Pages updates the picker automatically, but an older deployed Worker will show an explicit outdated-worker error until replaced. `All time` still means **all retained records** (the Worker removes records older than 90 days).
+
 ## Visitor Journey tracking (opt-in)
 
 **Visitor Journeys** shows how a consenting visitor moves between portfolio pages, including the approximate active time on each page, popular page-to-page transitions, high-interest content and recent anonymous journeys. A random journey token is held in tab session storage and expires after 30 minutes of inactivity. The Worker stores only its one-way digest, page paths without query strings, page entry/exit timestamps and approximate active duration. It does **not** link this token to a named visitor or the separate persistent returning-browser cookie.
