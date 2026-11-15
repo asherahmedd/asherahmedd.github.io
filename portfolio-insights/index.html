@@ -40,6 +40,12 @@
 <style id="analytics-time-window-ui">
 .range-toggle{display:inline-flex;align-items:center;gap:10px;min-width:170px;justify-content:space-between!important;background:#fff!important;border:1px solid #cdd9ea!important;color:#184b82!important;font-weight:720!important;box-shadow:0 3px 12px #1a47750b}
 .range-toggle:hover,.range-toggle[aria-expanded="true"]{border-color:#0071e3!important;background:#f3f8ff!important}
+.range-toggle{gap:10px;min-height:39px;padding:9px 12px!important}
+.range-toggle .range-clock,.range-toggle .range-chevron{display:block;flex:none;width:16px;height:16px}
+.range-toggle .range-clock{opacity:.82}
+.range-toggle .range-chevron{margin-left:auto;opacity:.76;transition:transform .22s ease,opacity .22s ease}
+.range-toggle[aria-expanded="true"] .range-chevron{transform:rotate(180deg);opacity:1}
+.range-toggle:focus-visible{outline:2px solid #0071e3;outline-offset:3px}
 .time-window{border:1px solid #dce6f2;border-radius:18px;background:#fff;box-shadow:0 9px 28px #21436a0e;padding:20px 22px;margin:-4px 0 18px}
 .time-window[hidden]{display:none!important}
 .time-head{display:flex;align-items:start;justify-content:space-between;gap:15px}
@@ -91,7 +97,7 @@
  </form>
  <p class="connection-privacy">The endpoint is remembered on this device. Your token stays in page memory and is never published to GitHub.</p>
 </div></header>
-<main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><button id="range-toggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="time-window"><span aria-hidden="true">◷</span> <span id="range-summary">Last 30 days</span> <span aria-hidden="true">⌄</span></button><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
+<main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><button id="range-toggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="time-window"><svg class="range-clock" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="range-summary">Last 30 days</span><svg class="range-chevron" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
 <section class="time-window" id="time-window" aria-label="Select analytics time window" hidden>
  <div class="time-head"><div><strong>Explore a time window</strong><p>All KPIs, charts and visitor journeys update together.</p></div><button id="time-close" type="button" aria-label="Close date range controls">×</button></div>
  <div class="time-presets" aria-label="Quick date ranges">
