@@ -141,7 +141,7 @@
   <div class="journey-subpanel"><h3>Most common next pages</h3><p>Where opted-in visits move after viewing another page.</p><div class="journey-ranking" id="journey-transitions"></div></div>
  </div>
  <details class="journey-details"><summary>See individual anonymous journeys</summary><div id="journey-recent" class="journey-recent"></div></details>
- <p class="subtle" id="journey-note">Detailed journeys require a database update, Worker deployment and explicit visitor consent.</p>
+ <p class="subtle" id="journey-note">Journey activity appears here when visitors explore multiple pages after accepting optional analytics cookies.</p>
 </section>
 <style id="journey-dashboard-styles">
 .journey-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0}
@@ -300,7 +300,7 @@ function renderJourney(d,isDemo){
   box.append(heading,list);el.append(box);
  }
  if(!recent.length)el.textContent='No opted-in journeys have been recorded yet.';
- $('journey-note').textContent=isDemo?'Demo data does not simulate individual browsing journeys.':journey.sessions?'Time is estimated from activity on visible pages; navigation outside the site cannot be observed. Only the latest 12 journeys are displayed.':'No journey data yet. Deploy the new Cloudflare table and Worker, then test with consent enabled.';
+ $('journey-note').textContent=isDemo?'Demo data does not simulate individual browsing journeys.':!Object.prototype.hasOwnProperty.call(d,'journey')?'Journey reporting is unavailable from the connected analytics service.':journey.sessions?'Time is estimated from activity on visible pages; navigation outside the site cannot be observed. Only the latest 12 journeys are displayed.':'No journeys recorded for this time window yet. Journeys appear automatically after visitors consent and explore your pages.';
 }
 function render(d,isDemo){
  const summary=d.summary||{},repeat=d.repeat||{},hours=timeRange.kind==='all_time'?0:timeRange.kind==='custom'?(Date.parse(timeRange.to)-Date.parse(timeRange.from))/3600000:timeRange.hours;
