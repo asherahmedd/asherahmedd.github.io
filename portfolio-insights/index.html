@@ -188,22 +188,25 @@
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>new Intl.NumberFormat('en-US').format(Math.round(Number(n)||0));const miniTime=m=>m>=60000?(m/60000).toFixed(1)+' min':Math.round(m/1000)+' sec';
-let secret='',api='',mode='none',requestVersion=0;const params=new URLSearchParams(location.search);try{api=localStorage.getItem('portfolio-insights-api')||''}catch{}$('endpoint').value=api;
+let secret='',api='',mode='none',requestVersion=0;
+const sliderHours=[1,3,6,12,24,72,168,336,720,2160];
+let timeRange={kind:'rolling',hours:720};const params=new URLSearchParams(location.search);try{api=localStorage.getItem('portfolio-insights-api')||''}catch{}$('endpoint').value=api;
 const names={'analytics':'SAP Analytics Cloud & Power BI','planning':'SAC Custom Planning','datasphere':'SAP Datasphere Engineering','automation':'AI Agents for Automation','agent':'Enterprise AI Analytics Agent'};
 const example={summary:{visitors:428,sessions:517,pageviews:1194,project_opens:289,blog_opens:134,active_ms:56205000},daily:Array.from({length:30},(_,i)=>({day:'Day '+(i+1),pageviews:Math.round(19+12*Math.sin(i*.64)**2+i*.75),visitors:Math.round(9+6*Math.sin(i*.5)**2+i*.3)})),pages:[{path:'/',views:627},{path:'/projects/sap-datasphere-engineering.html',views:192},{path:'/projects/advanced-sap-analytics-cloud-dashboards.html',views:131},{path:'/blog/enterprise-ai-analytics-agent.html',views:83},{path:'/projects/sac-distributor-replenishment-planning.html',views:77}],sections:[{section:'work',active_ms:23800000,sessions:350},{section:'skills',active_ms:9900000,sessions:180},{section:'journey',active_ms:6900000,sessions:115},{section:'writing',active_ms:4500000,sessions:81}],projects:[{item:'datasphere',opens:115},{item:'analytics',opens:86},{item:'planning',opens:49},{item:'agent',opens:27},{item:'automation',opens:12}],scroll:[{depth:25,sessions:422},{depth:50,sessions:331},{depth:75,sessions:209},{depth:90,sessions:118}],countries:[{country:'DE',views:160},{country:'SA',views:149},{country:'NL',views:97},{country:'PK',views:87},{country:'US',views:66}],devices:[{device:'desktop',views:640},{device:'mobile',views:512},{device:'tablet',views:42}],referrers:[{referrer:'linkedin.com',views:389},{referrer:'github.com',views:72},{referrer:'google.com',views:55}],filters:[{item:'datasphere',clicks:102},{item:'sac',clicks:85},{item:'ai',clicks:52},{item:'planning',clicks:42},{item:'powerbi',clicks:19}]};
 function bars(el,data,label,val){el.replaceChildren();const max=Math.max(1,...data.map(val));if(!data.length){el.textContent='No data yet';return}for(const d of data){const row=document.createElement('div');row.className='bar-row';const n=document.createElement('span');n.textContent=label(d);n.title=n.textContent;const track=document.createElement('span');track.className='track';const fill=document.createElement('i');fill.className='fill';fill.style.width=Math.max(1,100*val(d)/max)+'%';track.append(fill);const count=document.createElement('strong');count.textContent=fmt(val(d));row.append(n,track,count);el.append(row)}}
-function fillTrend(raw,hours,generatedAt){
- if(hours===0)return raw;
- const now=generatedAt?new Date(generatedAt):new Date();
- const unit=hours===1?300000:hours<=72?3600000:86400000;
- const first=Math.floor((now.getTime()-hours*3600000)/unit)*unit;
+function fillTrend(raw,hours,generatedAt,rangeInfo){
+ if(timeRange.kind==='all_time')return raw;
+ const now=rangeInfo?.to?new Date(rangeInfo.to):(generatedAt?new Date(generatedAt):new Date());
+ const start=rangeInfo?.from?new Date(rangeInfo.from).getTime():now.getTime()-hours*3600000;
+ const unit=hours<=1?300000:hours<=72?3600000:86400000;
+ const first=Math.floor(start/unit)*unit;
  const end=Math.floor(now.getTime()/unit)*unit;
  const map=new Map(raw.map(x=>[String(x.day),x]));
  const results=[];
  for(let t=first;t<=end;t+=unit){
   const date=new Date(t);
   const iso=date.toISOString();
-  const key=hours===1?iso.slice(0,16).replace('T',' '):hours<=72?iso.slice(0,13).replace('T',' '):iso.slice(0,10);
+  const key=hours<=1?iso.slice(0,16).replace('T',' '):hours<=72?iso.slice(0,13).replace('T',' '):iso.slice(0,10);
   results.push(map.get(key)||{day:key,pageviews:0,visitors:0});
  }
  return results;
@@ -282,7 +285,7 @@ function renderJourney(d,isDemo){
  $('journey-note').textContent=isDemo?'Demo data does not simulate individual browsing journeys.':journey.sessions?'Time is estimated from activity on visible pages; navigation outside the site cannot be observed. Only the latest 12 journeys are displayed.':'No journey data yet. Deploy the new Cloudflare table and Worker, then test with consent enabled.';
 }
 function render(d,isDemo){
- const summary=d.summary||{},repeat=d.repeat||{},hours=Number($('range').value);
+ const summary=d.summary||{},repeat=d.repeat||{},hours=timeRange.kind==='all_time'?0:timeRange.kind==='custom'?(Date.parse(timeRange.to)-Date.parse(timeRange.from))/3600000:timeRange.hours;
  const sources=groupedSources(d);
  const linkedin=sources[0][1],pageviews=Math.max(0,Number(summary.pageviews)||0);
  const projects=Array.isArray(d.projects)?d.projects:[];
@@ -298,8 +301,8 @@ function render(d,isDemo){
  $('new-browsers').textContent=isDemo?'—':fmt(repeat.new_browsers);
  $('consented-browsers').textContent=isDemo?'—':fmt(repeat.distinct_consented_browsers);
  $('repeat-explanation').textContent=isDemo?'No fabricated repeat-visit data is displayed.':'Only consenting browsers are counted. This does not identify people.';
- $('trend-label').textContent=hours===0?'Monthly tracked visits':hours===1?'5-minute tracked visits':hours<=72?'Hourly tracked visits':'Daily tracked visits';
- plot(isDemo?(d.daily||[]):fillTrend(d.daily||[],hours,d.generated_at));
+ $('trend-label').textContent=hours===0?'Monthly tracked visits':hours<=1?'5-minute tracked visits':hours<=72?'Hourly tracked visits':'Daily tracked visits';
+ plot(isDemo?(d.daily||[]):fillTrend(d.daily||[],hours,d.generated_at,d.range));
  bars($('sources'),sources.map(([name,views])=>({name,views})),x=>x.name,x=>x.views);
  bars($('projects'),sortedProjects,x=>names[x.item]||x.item,x=>x.opens);
  const list=$('insight-list');list.replaceChildren();
@@ -336,29 +339,101 @@ function render(d,isDemo){
  $('updated').textContent=isDemo?'Not connected':'Updated '+new Date().toLocaleTimeString();
  $('demo').textContent=isDemo?'Demo active':'View demo';
 }
+function rangeLabel(hours){
+ if(hours===0)return 'All retained history';
+ if(hours<24)return 'Last '+hours+' hour'+(hours===1?'':'s');
+ if(hours%24===0)return 'Last '+(hours/24)+' day'+(hours===24?'':'s');
+ return 'Last '+hours+' hours';
+}
+function localDateValue(d){
+ const p=n=>String(n).padStart(2,'0');
+ return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function syncTimeControls(){
+ const custom=timeRange.kind==='custom';
+ const hours=timeRange.hours||0;
+ $('range-summary').textContent=custom?'Custom dates':rangeLabel(hours);
+ $('time-selection').textContent='Selected: '+(custom?new Date(timeRange.from).toLocaleString()+' → '+new Date(timeRange.to).toLocaleString():rangeLabel(hours));
+ const index=sliderHours.indexOf(hours);
+ if(index>=0){$('time-slider').value=String(index);$('time-slider-value').textContent=rangeLabel(hours);}
+ else if(custom){$('time-slider-value').textContent='Custom window';}
+ for(const button of document.querySelectorAll('.time-presets button')){
+  button.classList.toggle('active',!custom&&Number(button.dataset.hours)===hours);
+ }
+}
+function showTimeRange(open){
+ $('time-window').hidden=!open;
+ $('range-toggle').setAttribute('aria-expanded',String(open));
+}
+function showPeriodError(message){$('time-error').textContent=message;}
+function applyRolling(hours){
+ timeRange=hours===0?{kind:'all_time',hours:0}:{kind:'rolling',hours};
+ showPeriodError('');syncTimeControls();
+ if(secret)load().catch(e=>{$('status').textContent=e.message});
+ else $('status').textContent='Demo mode — connect live analytics to apply this time range';
+}
 async function load(){
  if(!api||!secret)return;
  const version=++requestVersion;
- const hours=$('range').value;
- const resp=await fetch(api+'/stats?hours='+encodeURIComponent(hours),{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
- if(!resp.ok)throw Error(resp.status===401?'Invalid token or allowed origin':'Analytics service unavailable ('+resp.status+')');
+ const current={...timeRange};
+ const params=new URLSearchParams();
+ if(current.kind==='custom'){params.set('from',current.from);params.set('to',current.to);}
+ else params.set('hours',String(current.hours));
+ const resp=await fetch(api+'/stats?'+params.toString(),{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
+ if(!resp.ok){
+  let message='Analytics service unavailable ('+resp.status+')';
+  if(resp.status===401)message='Invalid token or allowed origin';
+  else if(resp.status===400)message='Invalid range or outdated Cloudflare Worker. Deploy the latest Worker code.';
+  throw Error(message);
+ }
  const data=await resp.json();
  if(version!==requestVersion)return;
- if(!Object.prototype.hasOwnProperty.call(data,'hours')||Number(data.hours)!==Number(hours)){
-  $('status').textContent='Worker update required — selected period was not applied. Deploy the latest Worker code from GitHub.';
+ if(!data.range||!data.range.from||!data.range.to||data.range.kind!==current.kind||(current.kind!=='custom'&&Number(data.hours)!==Number(current.hours))||(current.kind==='custom'&&(data.range.from!==current.from||data.range.to!==current.to))){
+  $('status').textContent='Cloudflare Worker update required — the requested time window was not applied.';
   $('dot').classList.remove('live');
-  throw Error('Cloudflare Worker is outdated: it did not apply the selected date filter. Deploy the updated Worker code.');
+  throw Error('Cloudflare Worker is outdated: deploy the latest Worker source to apply this time window.');
  }
  render(data,false);
- $('date-label').textContent=hours==='0'?'All retained history · monthly trend':new Date(Date.parse(data.generated_at)-Number(hours)*3600000).toLocaleString()+' — '+new Date(data.generated_at).toLocaleString()+' (local time)';
+ $('date-label').textContent=current.kind==='all_time'?'All retained history · monthly trend':new Date(data.range.from).toLocaleString()+' — '+new Date(data.range.to).toLocaleString()+' (local time)';
 }
-$('connect').addEventListener('submit',async e=>{e.preventDefault();const raw=$('endpoint').value.trim().replace(/\/$/,'');if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(raw)){alert('Enter a valid HTTPS Worker base URL, without a path.');return}api=raw;secret=$('token').value;try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';}catch(err){secret='';$('status').textContent='Connection failed — '+err.message;alert(err.message)}});
+$('range-toggle').addEventListener('click',()=>showTimeRange($('time-window').hidden));
+$('time-close').addEventListener('click',()=>showTimeRange(false));
+document.querySelectorAll('.time-presets button').forEach(button=>button.addEventListener('click',()=>applyRolling(Number(button.dataset.hours))));
+$('time-slider').addEventListener('input',()=>{
+ const hours=sliderHours[Number($('time-slider').value)];
+ $('time-slider-value').textContent=rangeLabel(hours);
+});
+$('time-slider').addEventListener('change',()=>{
+ applyRolling(sliderHours[Number($('time-slider').value)]);
+});
+$('time-apply').addEventListener('click',()=>{
+ const fromText=$('time-from').value,toText=$('time-to').value;
+ if(!fromText||!toText){showPeriodError('Select both start and end date/time.');return}
+ const from=new Date(fromText),to=new Date(toText),now=Date.now();
+ if(!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from>=to){showPeriodError('The end time must be after the start time.');return}
+ if(to.getTime()>now+60000){showPeriodError('The end time cannot be in the future.');return}
+ if(to-from>90*86400000){showPeriodError('Select 90 days or less, or use All time.');return}
+ timeRange={kind:'custom',from:from.toISOString(),to:to.toISOString()};
+ showPeriodError('');syncTimeControls();
+ if(secret)load().catch(e=>{$('status').textContent=e.message});
+ else $('status').textContent='Demo mode — connect live analytics to apply your custom period';
+});
+$('connect').addEventListener('submit',async e=>{
+ e.preventDefault();
+ const raw=$('endpoint').value.trim().replace(/\/$/,'');
+ if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(raw)){alert('Enter a valid HTTPS Worker base URL, without a path.');return}
+ api=raw;secret=$('token').value;
+ try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';}
+ catch(err){secret='';$('status').textContent='Connection failed — '+err.message;alert(err.message)}
+});
 $('demo').addEventListener('click',()=>{requestVersion++;render(example,true)});
 $('refresh').addEventListener('click',()=>{if(secret)load().catch(e=>{$('status').textContent=e.message});else render(example,true)});
-$('range').addEventListener('change',()=>{
- if(secret)load().catch(e=>{$('status').textContent=e.message});
- else{$('status').textContent='Demo mode — connect live analytics to filter this period';$('date-label').textContent='Demo only: fictional 30-day sample; selected range is not applied';}
-});
+const now=new Date();
+$('time-to').value=localDateValue(now);
+$('time-from').value=localDateValue(new Date(now.getTime()-7*86400000));
+$('time-to').max=localDateValue(now);
+syncTimeControls();
+
 render(example,true);
 })();
 </script>
