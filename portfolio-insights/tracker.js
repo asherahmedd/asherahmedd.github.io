@@ -24,7 +24,7 @@ function begin(){
 }
 /* Optional recognition of returning browsers. This is entirely separate from
    baseline, memory-only analytics and never runs until the user opts in. */
-const repeatChoice='portfolio_visitor_details_consent_v2',repeatId='portfolio_repeat_id_v1';
+const repeatChoice='portfolio_journey_consent_v3',repeatId='portfolio_repeat_id_v1';
 const cookieName='portfolio_returning_browser';
 const repeatPrivacy='/portfolio-insights/privacy.html';
 const repeatRead=key=>{try{return localStorage.getItem(key)}catch{return null}};
@@ -40,8 +40,41 @@ function writeRepeatCookie(id){
  document.cookie=cookieName+'='+encodeURIComponent(id)+'; Max-Age=7776000; Path=/; SameSite=Lax; Secure';
  return readRepeatCookie()===id;
 }
+/* Consented, per-tab journeys: no cross-device or person-level identification. */
+let journeyStarted=false,journeyId='',pageId='',activeMs=0,lastActivity=Date.now();
+const journeyKey='portfolio_journey_tab_v1';
+function journeyPayload(action){
+ return {action,consent:true,journey_id:journeyId,page_id:pageId,path:location.pathname,
+  device:innerWidth<700?'mobile':innerWidth<1000?'tablet':'desktop',
+  source:(()=>{try{return new URL(document.referrer).hostname}catch{return''}})(),
+  active_ms:activeMs};
+}
+function endJourney(){
+ if(!journeyStarted)return;
+ fetch(base+'/journey',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(journeyPayload('end')),keepalive:true}).catch(()=>{});
+}
+function startJourney(){
+ if(journeyStarted||repeatRead(repeatChoice)!=='yes')return;
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(journeyKey)||'null');
+  journeyId=saved&&typeof saved.id==='string'&&/^[0-9a-f-]{36}$/i.test(saved.id)&&Date.now()-Number(saved.last)<1800000?saved.id:fresh();
+  sessionStorage.setItem(journeyKey,JSON.stringify({id:journeyId,last:Date.now()}));
+ }catch{journeyId=fresh()}
+ pageId=fresh();journeyStarted=true;lastActivity=Date.now();
+ fetch(base+'/journey',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(journeyPayload('start')),keepalive:true}).catch(()=>{});
+ setInterval(()=>{
+  if(!journeyStarted||document.hidden)return;
+  if(Date.now()-lastActivity<45000)activeMs+=5000;
+ },5000);
+ for(const type of ['scroll','pointerdown','keydown','touchstart']){
+  document.addEventListener(type,()=>{lastActivity=Date.now()},{passive:true});
+ }
+ addEventListener('pagehide',endJourney,{once:true});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)endJourney();else lastActivity=Date.now()});
+}
 function identityVisit(){
  if(repeatRead(repeatChoice)!=='yes')return;
+ startJourney();
  let id=readRepeatCookie();
  if(!id||!/^[0-9a-f-]{36}$/i.test(id)){
   id=fresh();
@@ -60,7 +93,7 @@ async function offerRepeatChoice(){
   host.setAttribute('aria-label','Analytics cookie preferences');
   host.style.cssText='position:fixed;bottom:17px;left:17px;right:17px;z-index:100000;max-width:430px;background:#fff;color:#20252c;border:1px solid #dce2e9;border-radius:15px;box-shadow:0 12px 35px #18243b26;padding:17px 18px;font:13px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
   const heading=document.createElement('strong');heading.textContent='Allow analytics cookies?';
-  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='Basic visit statistics run without cookies. If you allow optional analytics cookies, we can count repeat visits and summarize approximate city, region, internet network provider, browser and device. We do not identify you by name, employer or LinkedIn profile.';
+  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='Basic visit statistics run without cookies. If you allow optional analytics cookies, we can count repeat visits and summarize approximate city, region, internet network provider, browser, device and your page-to-page journey (pages viewed and approximate active time). We do not identify you by name, employer or LinkedIn profile.';
   const actions=document.createElement('div');actions.style.cssText='display:flex;gap:9px;flex-wrap:wrap;align-items:center';
   const yes=document.createElement('button'),no=document.createElement('button'),link=document.createElement('a');
   yes.type='button';no.type='button';yes.textContent='Allow analytics cookies';no.textContent='Reject optional cookies';link.href=repeatPrivacy;link.textContent='Cookie details';
@@ -78,6 +111,8 @@ function disable(){
  enabled=false;
  try{localStorage.setItem(repeatChoice,'no')}catch{}
  clearRepeat();
+ journeyStarted=false;
+ try{sessionStorage.removeItem(journeyKey)}catch{}
  document.getElementById('portfolio-repeat-choice')?.remove();
  try{localStorage.setItem(consentKey,'no');localStorage.removeItem('portfolio_visitor_v1');sessionStorage.removeItem('portfolio_session_v1')}catch{}
 }
