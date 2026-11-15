@@ -54,18 +54,9 @@
 .time-slider-header label{color:#5e7085}.time-slider-header strong{color:#126bc2}
 .time-slider-wrap input[type="range"]{width:100%;accent-color:#0071e3;cursor:pointer}
 .time-slider-ticks{display:flex;justify-content:space-between;font-size:10px;color:#96a4b3;margin-top:6px}
-.time-custom{margin-top:17px}
-.time-custom-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
-.time-custom-heading strong{font-size:12px}.time-custom-heading span{font-size:10px;color:#8492a2}
-.time-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:9px;align-items:end}
-.time-fields label{display:flex;flex-direction:column;gap:6px;color:#65758a;font-size:10px;font-weight:710}
-.time-fields input{width:100%;min-width:0;background:#fff;border:1px solid #d9e2ed;border-radius:9px;padding:10px 9px;color:#33445a;font-size:12px}
-.time-fields button{border:0;background:#111827;color:#fff;font-size:12px;font-weight:700;border-radius:9px;padding:11px 17px;cursor:pointer}
-.time-fields button:hover{background:#293952}
-.time-error{min-height:15px;margin:7px 0 0;color:#ba3542;font-size:11px}
 .time-foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #eef2f6;padding-top:12px;margin-top:9px;color:#8290a0;font-size:10px}
-@media(max-width:650px){.time-window{padding:16px 14px}.time-fields{grid-template-columns:1fr 1fr}.time-fields button{grid-column:1/-1}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}.time-custom-heading{align-items:start;flex-direction:column;gap:3px}}
-@media(max-width:400px){.time-fields{grid-template-columns:1fr}.time-fields button{grid-column:auto}.range-toggle{min-width:155px}}
+@media(max-width:650px){.time-window{padding:16px 14px}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}}
+@media(max-width:400px){.range-toggle{min-width:155px}}
 </style>
 </head>
 <body>
@@ -84,15 +75,6 @@
   <div class="time-slider-header"><label for="time-slider">Rolling lookback</label><strong id="time-slider-value">30 days</strong></div>
   <input id="time-slider" type="range" min="0" max="9" step="1" value="8" aria-label="Rolling time range">
   <div class="time-slider-ticks"><span>1 hour</span><span>1 day</span><span>1 week</span><span>90 days</span></div>
- </div>
- <div class="time-custom">
-  <div class="time-custom-heading"><strong>Custom date &amp; time</strong><span>Local timezone · 90-day maximum</span></div>
-  <div class="time-fields">
-   <label>From <input id="time-from" type="datetime-local" aria-label="Start date and time"></label>
-   <label>To <input id="time-to" type="datetime-local" aria-label="End date and time"></label>
-   <button id="time-apply" type="button">Apply range</button>
-  </div>
-  <p id="time-error" class="time-error" role="status" aria-live="polite"></p>
  </div>
  <div class="time-foot"><span id="time-selection">Selected: Last 30 days</span><span>All time includes retained data only (up to 90 days).</span></div>
 </section>
@@ -345,30 +327,21 @@ function rangeLabel(hours){
  if(hours%24===0)return 'Last '+(hours/24)+' day'+(hours===24?'':'s');
  return 'Last '+hours+' hours';
 }
-function localDateValue(d){
- const p=n=>String(n).padStart(2,'0');
- return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
-}
 function syncTimeControls(){
- const custom=timeRange.kind==='custom';
- const hours=timeRange.hours||0;
- $('range-summary').textContent=custom?'Custom dates':rangeLabel(hours);
- $('time-selection').textContent='Selected: '+(custom?new Date(timeRange.from).toLocaleString()+' → '+new Date(timeRange.to).toLocaleString():rangeLabel(hours));
+ const hours=timeRange.hours;
+ $('range-summary').textContent=rangeLabel(hours);
+ $('time-selection').textContent='Selected: '+rangeLabel(hours);
  const index=sliderHours.indexOf(hours);
  if(index>=0){$('time-slider').value=String(index);$('time-slider-value').textContent=rangeLabel(hours);}
- else if(custom){$('time-slider-value').textContent='Custom window';}
- for(const button of document.querySelectorAll('.time-presets button')){
-  button.classList.toggle('active',!custom&&Number(button.dataset.hours)===hours);
- }
+ for(const button of document.querySelectorAll('.time-presets button'))button.classList.toggle('active',Number(button.dataset.hours)===hours);
 }
 function showTimeRange(open){
  $('time-window').hidden=!open;
  $('range-toggle').setAttribute('aria-expanded',String(open));
 }
-function showPeriodError(message){$('time-error').textContent=message;}
 function applyRolling(hours){
  timeRange=hours===0?{kind:'all_time',hours:0}:{kind:'rolling',hours};
- showPeriodError('');syncTimeControls();
+ syncTimeControls();
  if(secret)load().catch(e=>{$('status').textContent=e.message});
  else $('status').textContent='Demo mode — connect live analytics to apply this time range';
 }
@@ -377,8 +350,7 @@ async function load(){
  const version=++requestVersion;
  const current={...timeRange};
  const params=new URLSearchParams();
- if(current.kind==='custom'){params.set('from',current.from);params.set('to',current.to);}
- else params.set('hours',String(current.hours));
+ params.set('hours',String(current.hours));
  const resp=await fetch(api+'/stats?'+params.toString(),{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
  if(!resp.ok){
   let message='Analytics service unavailable ('+resp.status+')';
@@ -388,7 +360,7 @@ async function load(){
  }
  const data=await resp.json();
  if(version!==requestVersion)return;
- if(!data.range||!data.range.from||!data.range.to||data.range.kind!==current.kind||(current.kind!=='custom'&&Number(data.hours)!==Number(current.hours))||(current.kind==='custom'&&(data.range.from!==current.from||data.range.to!==current.to))){
+ if(!data.range||!data.range.from||!data.range.to||data.range.kind!==current.kind||Number(data.hours)!==Number(current.hours)){
   $('status').textContent='Cloudflare Worker update required — the requested time window was not applied.';
   $('dot').classList.remove('live');
   throw Error('Cloudflare Worker is outdated: deploy the latest Worker source to apply this time window.');
@@ -406,18 +378,6 @@ $('time-slider').addEventListener('input',()=>{
 $('time-slider').addEventListener('change',()=>{
  applyRolling(sliderHours[Number($('time-slider').value)]);
 });
-$('time-apply').addEventListener('click',()=>{
- const fromText=$('time-from').value,toText=$('time-to').value;
- if(!fromText||!toText){showPeriodError('Select both start and end date/time.');return}
- const from=new Date(fromText),to=new Date(toText),now=Date.now();
- if(!Number.isFinite(from.getTime())||!Number.isFinite(to.getTime())||from>=to){showPeriodError('The end time must be after the start time.');return}
- if(to.getTime()>now+60000){showPeriodError('The end time cannot be in the future.');return}
- if(to-from>90*86400000){showPeriodError('Select 90 days or less, or use All time.');return}
- timeRange={kind:'custom',from:from.toISOString(),to:to.toISOString()};
- showPeriodError('');syncTimeControls();
- if(secret)load().catch(e=>{$('status').textContent=e.message});
- else $('status').textContent='Demo mode — connect live analytics to apply your custom period';
-});
 $('connect').addEventListener('submit',async e=>{
  e.preventDefault();
  const raw=$('endpoint').value.trim().replace(/\/$/,'');
@@ -428,10 +388,6 @@ $('connect').addEventListener('submit',async e=>{
 });
 $('demo').addEventListener('click',()=>{requestVersion++;render(example,true)});
 $('refresh').addEventListener('click',()=>{if(secret)load().catch(e=>{$('status').textContent=e.message});else render(example,true)});
-const now=new Date();
-$('time-to').value=localDateValue(now);
-$('time-from').value=localDateValue(new Date(now.getTime()-7*86400000));
-$('time-to').max=localDateValue(now);
 syncTimeControls();
 
 render(example,true);
