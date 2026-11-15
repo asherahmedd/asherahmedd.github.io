@@ -20,6 +20,21 @@ Privacy-conscious visitor analytics for [asherahmedd.github.io](https://asherahm
 7. After publishing the privacy notice, add `<script defer src="/portfolio-insights/tracker.js" data-endpoint="https://YOUR-WORKER.workers.dev"></script>` to each portfolio page. You can also use `install_tracker.py --endpoint https://YOUR-WORKER.workers.dev --repo /path/to/site` to add the tag in bulk; the tracker measures page activity without a popup, and users can opt out on `privacy.html`. It avoids persistent visitor identifiers.
 8. Dashboard starts showing **real** visits only after your deployed tracker begins collecting events. No historical traffic backfill is available.
 
+## Visitor Journey tracking (opt-in)
+
+**Visitor Journeys** shows how a consenting visitor moves between portfolio pages, including the approximate active time on each page, popular page-to-page transitions, high-interest content and recent anonymous journeys. A random journey token is held in tab session storage and expires after 30 minutes of inactivity. The Worker stores only its one-way digest, page paths without query strings, page entry/exit timestamps and approximate active duration. It does **not** link this token to a named visitor or the separate persistent returning-browser cookie.
+
+Journey data is recorded only after a new, explicitly informed opt-in. The expanded consent choice uses `portfolio_journey_consent_v3`; earlier consent decisions do not automatically authorize journey tracking. Browser privacy signals and site opt-out remain respected. Duration is an estimate based on visible-page recent interaction, not proof of reading. The dashboard shows aggregate page engagement and transitions, with the latest 12 anonymous tab journeys for inspection. Partial sessions and single-page exits may have unknown final durations.
+
+### Activate in Cloudflare without installing software
+
+1. Open the existing **D1 → portfolio-insights → Console**, paste the SQL from [visitor-journey-migration.sql](worker/visitor-journey-migration.sql), and execute it. This adds only `visitor_journey_pages` and indexes.
+2. Open **Workers & Pages → ashar-portfolio-insights → Edit Code**, replace the existing code with the latest [worker/src/index.js](worker/src/index.js) and click **Deploy**.
+3. On a fresh browser session visit the portfolio and choose **Allow analytics cookies**, then visit several portfolio project pages.
+4. Open [Portfolio Insights](https://asherahmedd.github.io/portfolio-insights/), connect with your existing admin token, and inspect **Visitor Journeys**.
+
+Older anonymous traffic cannot be converted into complete historical journeys. These records are purged after 90 days by the existing scheduled Worker cleanup, once the updated Worker is deployed.
+
 ## Visitor Intelligence: detailed analytics with explicit consent
 
 The expanded **Visitor Intelligence** section displays country-level aggregate traffic from baseline measurements, plus the following optional, consent-based summaries: approximate city, region, timezone, internet network operator (Cloudflare ASN organization and ASN), broad browser, operating system and device categories, and referring website hostname.
