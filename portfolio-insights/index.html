@@ -58,9 +58,36 @@
 @media(max-width:650px){.time-window{padding:16px 14px}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}}
 @media(max-width:400px){.range-toggle{min-width:155px}}
 </style>
-</head>
+<style id="header-connect-panel-css">
+.top{position:relative;z-index:40}
+.connection-toggle{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border-radius:10px;border:1px solid #bfd5ee;background:#eef6ff;color:#0865be;font-size:12px;font-weight:730;white-space:nowrap}
+.connection-toggle:hover,.connection-toggle[aria-expanded="true"]{background:#dcefff;border-color:#85b6eb}
+.connection-indicator{display:block;width:7px;height:7px;background:#c18b48;border-radius:50%}
+.connection-toggle.connected .connection-indicator{background:#14a171}
+.connection-popover{position:absolute;right:max(20px,calc((100vw - 1140px)/2 + 25px));top:calc(100% + 7px);width:min(390px,calc(100vw - 24px));padding:19px;background:#fff;border:1px solid #dce5f1;border-radius:17px;box-shadow:0 14px 40px #1e385d24;z-index:50}
+.connection-popover[hidden]{display:none!important}
+.connection-popover-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:15px}
+.connection-popover-head strong{font-size:15px}.connection-popover-head p{margin:3px 0 0;color:#7a8898;font-size:11px}
+.connection-popover-head button{display:grid;place-items:center;border:0;background:#f2f5f9;color:#6a7789;border-radius:8px;width:30px;height:30px;font-size:20px}
+.connection-form{display:grid;gap:8px}
+.connection-form label{font-size:11px;color:#53667d;font-weight:700}
+.connection-form input{width:100%;min-width:0;padding:11px;border:1px solid #d9e3ee;border-radius:10px;font-size:12px;background:#fbfcfe;color:#243b54}
+.connection-form button{background:#0875df;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:750;font-size:12px;margin-top:4px}
+.connection-form button:hover{background:#0064c2}
+.connection-privacy{font-size:10px;color:#8995a6;line-height:1.5;margin:12px 0 0}
+@media(max-width:480px){.connection-popover{right:12px}.top-links{gap:9px}.connection-toggle{padding:8px 10px;font-size:11px}}
+</style></head>
 <body>
-<header class="top"><div class="top-inner"><a class="brand" href="/">Muhammad Ashar<span>.</span> <span style="color:#6e6e73;font-size:12px;font-weight:550">Insights</span></a><nav class="top-links"><a href="/">Portfolio</a><a href="https://github.com/asherahmedd" target="_blank" rel="noopener">GitHub ↗</a></nav></div></header>
+<header class="top"><div class="top-inner"><a class="brand" href="/">Muhammad Ashar<span>.</span> <span style="color:#6e6e73;font-size:12px;font-weight:550">Insights</span></a><nav class="top-links"><a href="/">Portfolio</a><a href="https://github.com/asherahmedd" target="_blank" rel="noopener">GitHub ↗</a><button id="connection-toggle" class="connection-toggle" type="button" aria-expanded="false" aria-controls="connection-panel"><span class="connection-indicator" aria-hidden="true"></span>Connect <span aria-hidden="true">⌄</span></button></nav></div>
+<div class="connection-popover" id="connection-panel" hidden>
+ <div class="connection-popover-head"><div><strong>Connect analytics</strong><p>Private Cloudflare dashboard connection</p></div><button id="connection-close" type="button" aria-label="Close connection panel">×</button></div>
+ <form id="connect" class="connection-form">
+  <label for="endpoint">Worker endpoint</label><input id="endpoint" type="url" placeholder="https://your-worker.workers.dev" autocomplete="url" required>
+  <label for="token">Private admin token</label><input id="token" type="password" placeholder="Enter your admin token" autocomplete="off" required>
+  <button type="submit">Connect analytics</button>
+ </form>
+ <p class="connection-privacy">The endpoint is remembered on this device. Your token stays in page memory and is never published to GitHub.</p>
+</div></header>
 <main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><button id="range-toggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="time-window"><span aria-hidden="true">◷</span> <span id="range-summary">Last 30 days</span> <span aria-hidden="true">⌄</span></button><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
 <section class="time-window" id="time-window" aria-label="Select analytics time window" hidden>
  <div class="time-head"><div><strong>Explore a time window</strong><p>All KPIs, charts and visitor journeys update together.</p></div><button id="time-close" type="button" aria-label="Close date range controls">×</button></div>
@@ -164,7 +191,7 @@
   </div>
  </div>
 </details>
-<section class="setup"><h2>Connect your private analytics database</h2><p>The interface is hosted separately from your portfolio pages. Real data requires a deployed Cloudflare Worker, its D1 database and an administrator token. The token is never embedded in your public website.</p><form id="connect" class="form-grid"><input id="endpoint" type="url" placeholder="https://your-worker.workers.dev" autocomplete="url" required aria-label="Cloudflare Worker endpoint"><input id="token" type="password" placeholder="Private admin token" autocomplete="off" required aria-label="Private admin token"><button type="submit">Connect analytics</button></form><div class="hint">Endpoint is remembered only on your device. Admin token is held in page memory, not stored or uploaded to GitHub. The live dashboard is accessible only after successful authorization.</div></section>
+
 <div class="footer"><span>Portfolio Insights · Private analytics viewer</span><span>Illustrative numbers are always labeled as demo.</span></div></main>
 <script>
 (()=>{
@@ -378,12 +405,22 @@ $('time-slider').addEventListener('input',()=>{
 $('time-slider').addEventListener('change',()=>{
  applyRolling(sliderHours[Number($('time-slider').value)]);
 });
+const connectionPanel=$('connection-panel');
+function showConnectionPanel(open){
+ connectionPanel.hidden=!open;
+ $('connection-toggle').setAttribute('aria-expanded',String(open));
+ if(open)requestAnimationFrame(()=>(!api?$('endpoint'):$('token')).focus());
+}
+$('connection-toggle').addEventListener('click',()=>showConnectionPanel(connectionPanel.hidden));
+$('connection-close').addEventListener('click',()=>showConnectionPanel(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!connectionPanel.hidden){showConnectionPanel(false);$('connection-toggle').focus();}});
+document.addEventListener('click',e=>{if(!connectionPanel.hidden&&!connectionPanel.contains(e.target)&&!$('connection-toggle').contains(e.target))showConnectionPanel(false)});
 $('connect').addEventListener('submit',async e=>{
  e.preventDefault();
  const raw=$('endpoint').value.trim().replace(/\/$/,'');
  if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(raw)){alert('Enter a valid HTTPS Worker base URL, without a path.');return}
  api=raw;secret=$('token').value;
- try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';}
+ try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';$('connection-toggle').classList.add('connected');showConnectionPanel(false);}
  catch(err){secret='';$('status').textContent='Connection failed — '+err.message;alert(err.message)}
 });
 $('demo').addEventListener('click',()=>{requestVersion++;render(example,true)});
