@@ -4,31 +4,64 @@ on:
   push:
     branches: [main]
     paths:
-      - social-preview.svg
+      - favicon.svg
       - .github/workflows/social-preview.yml
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: social-preview-image
+  cancel-in-progress: false
+
 jobs:
   render-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Convert SVG to social-preview.png
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Render social preview from portfolio favicon
         run: |
-          python -m pip install --quiet cairosvg
+          python -m pip install --quiet cairosvg pillow
           python - <<'PY'
+          import io
           import cairosvg
-          cairosvg.svg2png(url="social-preview.svg", write_to="social-preview.png", output_width=1200, output_height=630)
+          from PIL import Image, ImageDraw, ImageFont
+          W,H=1200,630
+          bg=Image.new('RGB',(W,H),'#f5f8ff')
+          draw=ImageDraw.Draw(bg)
+          draw.rounded_rectangle((38,38,W-38,H-38),radius=32,fill='#ffffff',outline='#dce9f9',width=3)
+          draw.ellipse((940,-155,1400,305),fill='#eaf4ff')
+          draw.ellipse((-260,490,340,1090),fill='#edf5ff')
+          icon=Image.open(io.BytesIO(cairosvg.svg2png(url='favicon.svg',output_width=260,output_height=260))).convert('RGBA')
+          bg.paste(icon,(92,171),icon)
+          def font(size,bold=False):
+              path='/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf' if bold else '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'
+              return ImageFont.truetype(path,size)
+          draw.text((405,190),'Muhammad Ashar',font=font(66,True),fill='#17253b')
+          draw.text((408,285),'Data & AI Solution Architect',font=font(34,True),fill='#0871dc')
+          draw.rounded_rectangle((408,358,510,367),radius=4,fill='#0071e3')
+          draw.text((408,403),'Portfolio  |  Projects  |  Architecture',font=font(22),fill='#65758a')
+          draw.text((408,463),'asherahmedd.github.io',font=font(21),fill='#3e6089')
+          bg.save('social-preview.png',optimize=True)
           PY
-      - name: Commit generated preview image
+      - name: Commit refreshed PNG safely
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add social-preview.png
           if ! git diff --cached --quiet; then
-            git commit -m "Generate social preview PNG from SVG"
-            git push
+            git commit -m "Update social preview from favicon.svg"
+            for attempt in 1 2 3 4 5; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then
+                exit 0
+              fi
+              sleep 3
+            done
+            echo "Unable to publish generated image" >&2
+            exit 1
           fi
