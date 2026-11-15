@@ -48,6 +48,53 @@ async function recordIdentity(db,id,secret){
  await db.prepare('INSERT INTO identity_visitors(visitor_hash,first_seen,last_seen,visits) VALUES(?,?,?,1) ON CONFLICT(visitor_hash) DO UPDATE SET last_seen=excluded.last_seen,visits=visits+1').bind(hash,now,now).run();
  await db.prepare('INSERT INTO identity_visits(ts,visitor_hash,is_returning) VALUES(?,?,?)').bind(now,hash,prior?1:0).run();
 }
+async function recordJourney(req,env){
+ const data=await req.json();
+ if(data?.consent!==true||typeof data.journey_id!=='string'||!/^[0-9a-f-]{36}$/i.test(data.journey_id)||typeof data.page_id!=='string'||!/^[0-9a-f-]{36}$/i.test(data.page_id))return reply({error:'invalid_journey'},400,cors);
+ const hash=await identityHash(data.journey_id,env.ADMIN_TOKEN);
+ const path=safe(data.path,180);
+ if(!path.startsWith('/')||path.startsWith('//')||path.includes('\\'))return reply({error:'invalid_path'},400,cors);
+ if(data.action==='start'){
+  const source=safe(data.source||'',100),device=['mobile','tablet','desktop'].includes(data.device)?data.device:'other';
+  await env.DB.prepare('INSERT OR IGNORE INTO visitor_journey_pages(journey_hash,page_id,path,started_at,source,device) VALUES(?,?,?,?,?,?)').bind(hash,data.page_id,path,new Date().toISOString(),source,device).run();
+ }else if(data.action==='end'){
+  const duration=Number(data.active_ms);
+  if(!Number.isFinite(duration))return reply({error:'invalid_duration'},400,cors);
+  const activeMs=Math.min(1800000,Math.max(0,Math.round(duration)));
+  await env.DB.prepare('UPDATE visitor_journey_pages SET active_ms=MAX(active_ms,?), ended_at=? WHERE page_id=? AND journey_hash=? AND path=?').bind(activeMs,new Date().toISOString(),data.page_id,hash,path).run();
+ }else return reply({error:'invalid_action'},400,cors);
+ return new Response(null,{status:204,headers:cors});
+}
+async function reportJourney(db,since){
+ const empty={sessions:0,page_steps:0,avg_pages_per_session:0,pages:[],transitions:[],recent:[]};
+ try{
+  const rows=(await db.prepare('SELECT journey_hash,path,started_at,ended_at,active_ms,source,device FROM visitor_journey_pages WHERE started_at>=? ORDER BY started_at DESC LIMIT 1500').bind(since).all()).results||[];
+  if(!rows.length)return empty;
+  const groups=new Map(),byPath=new Map(),transitions=new Map();
+  for(const r of rows){
+   if(!groups.has(r.journey_hash))groups.set(r.journey_hash,[]);
+   groups.get(r.journey_hash).push(r);
+   const entry=byPath.get(r.path)||{path:r.path,views:0,total_ms:0,completed:0};
+   entry.views++;
+   if(r.ended_at){entry.total_ms+=Math.max(0,Number(r.active_ms)||0);entry.completed++;}
+   byPath.set(r.path,entry);
+  }
+  const recent=[];
+  for(const list of groups.values()){
+   list.sort((a,b)=>a.started_at.localeCompare(b.started_at));
+   for(let i=1;i<list.length;i++){
+    const key=list[i-1].path+'\u0001'+list[i].path;
+    const t=transitions.get(key)||{from:list[i-1].path,to:list[i].path,count:0};
+    t.count++;transitions.set(key,t);
+   }
+   recent.push({started_at:list[0].started_at,source:list[0].source||'Direct / unknown',device:list[0].device,steps:list.slice(0,20).map(x=>({path:x.path,started_at:x.started_at,active_ms:x.ended_at?x.active_ms:null}))});
+  }
+  recent.sort((a,b)=>b.started_at.localeCompare(a.started_at));
+  return {sessions:groups.size,page_steps:rows.length,avg_pages_per_session:Number((rows.length/groups.size).toFixed(1)),
+   pages:[...byPath.values()].map(p=>({...p,avg_active_ms:p.completed?Math.round(p.total_ms/p.completed):null})).sort((a,b)=>b.total_ms-a.total_ms).slice(0,12),
+   transitions:[...transitions.values()].sort((a,b)=>b.count-a.count).slice(0,12),recent:recent.slice(0,12),limited:rows.length===1500};
+ }catch{return empty}
+}
 async function report(db,hours){
  const since=hours===0?'1970-01-01T00:00:00.000Z':new Date(Date.now()-hours*3600000).toISOString();
  const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72&&hours>0?"substr(ts,1,13)":hours===0?"substr(ts,1,7)":"substr(ts,1,10)";
@@ -83,15 +130,21 @@ async function report(db,hours){
   context.consented_context_visits=total?.visits||0;
  }catch{/* Feature not deployed: preserve baseline analytics. */}
  try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
- return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context};
+ const journey=await reportJourney(db,since);
+ return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context,journey};
 }
 export default {
  async fetch(req,env){
   const path=new URL(req.url).pathname;
   if(path==='/health')return reply({status:'ok',service:'portfolio-insights',features:{repeat_visits:true}},200,cors);
-  if(path==='/track'||path==='/stats'||path==='/identity'){
+  if(path==='/track'||path==='/stats'||path==='/identity'||path==='/journey'){
    if(req.headers.get('Origin')!==origin)return reply({error:'origin_not_allowed'},403);
    if(req.method==='OPTIONS')return new Response(null,{status:204,headers:cors});
+   if(path==='/journey'){
+    if(req.method!=='POST')return reply({error:'method_not_allowed'},405,cors);
+    if(Number(req.headers.get('Content-Length')||0)>1024)return reply({error:'payload_too_large'},413,cors);
+    try{return await recordJourney(req,env)}catch{return reply({error:'journey_storage_unavailable'},503,cors)}
+   }
    if(path==='/identity'){
     if(req.method!=='POST')return reply({error:'method_not_allowed'},405,cors);
     if(Number(req.headers.get('Content-Length')||0)>512)return reply({error:'payload_too_large'},413,cors);
@@ -127,5 +180,5 @@ export default {
   }
   return reply({error:'not_found'},404);
  },
- async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run();try{await env.DB.prepare('DELETE FROM visitor_context WHERE ts<?').bind(cutoff).run()}catch{}}
+ async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run();try{await env.DB.prepare('DELETE FROM visitor_context WHERE ts<?').bind(cutoff).run()}catch{};try{await env.DB.prepare('DELETE FROM visitor_journey_pages WHERE started_at<?').bind(cutoff).run()}catch{}}
 };
