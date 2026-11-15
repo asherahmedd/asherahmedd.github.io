@@ -59,6 +59,38 @@
  <section class="panel"><h2>Where visitors came from</h2><p>Sources detected from referring websites. Missing sources are included as Other / unknown.</p><div class="rows" id="sources"></div></section>
 </div>
 <section class="panel" style="margin-top:14px"><h2>Most popular projects</h2><p>Projects visitors chose to open.</p><div class="rows" id="projects"></div></section>
+<section class="panel" id="visitor-journey-panel" style="margin-top:14px" aria-label="Visitor journeys">
+ <div class="panel-heading"><h2>Visitor Journeys</h2><span class="subtle">Opted-in browsing sessions only</span></div>
+ <p>Understand the order of pages explored, approximate active time, and which topics hold attention. Sessions are tab-scoped and not linked to names or employers.</p>
+ <div class="journey-kpis"><div class="scroll-step"><b id="journey-sessions">—</b><small>Recorded journeys</small></div><div class="scroll-step"><b id="journey-steps">—</b><small>Pages explored</small></div><div class="scroll-step"><b id="journey-average">—</b><small>Avg. pages per journey</small></div></div>
+ <div class="layout">
+  <div class="journey-subpanel"><h3>Pages holding attention</h3><p>Average measured active time per completed page view; this is an estimate, not reading time.</p><div class="journey-ranking" id="journey-pages"></div></div>
+  <div class="journey-subpanel"><h3>Most common next pages</h3><p>Where opted-in visits move after viewing another page.</p><div class="journey-ranking" id="journey-transitions"></div></div>
+ </div>
+ <details class="journey-details"><summary>See individual anonymous journeys</summary><div id="journey-recent" class="journey-recent"></div></details>
+ <p class="subtle" id="journey-note">Detailed journeys require a database update, Worker deployment and explicit visitor consent.</p>
+</section>
+<style id="journey-dashboard-styles">
+.journey-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0}
+.journey-subpanel{border:1px solid #edf1f5;border-radius:13px;padding:14px;min-width:0}
+.journey-subpanel h3{font-size:13px;margin:0;font-weight:730}
+.journey-ranking{display:grid;gap:10px}
+.journey-record{padding:8px 0;border-bottom:1px solid #f0f2f5;display:grid;gap:3px}
+.journey-record:last-child{border:0}
+.journey-record strong{font-size:11px;overflow-wrap:anywhere}
+.journey-record small{font-size:10px;color:#718095}
+.journey-record .path-track{height:5px;background:#eff4fb;border-radius:10px;overflow:hidden}
+.journey-record .path-fill{height:100%;background:#80b6ef;border-radius:10px}
+.journey-details{margin-top:15px;border-top:1px solid #e8edf3;padding-top:13px}
+.journey-details>summary{cursor:pointer;color:#126fce;font-size:12px;font-weight:710}
+.journey-recent{display:grid;gap:10px;margin-top:12px}
+.journey-entry{border:1px solid #e9edf4;border-radius:12px;background:#fcfdff;padding:12px}
+.journey-entry h4{font-size:11px;margin:0 0 10px}
+.journey-steps{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.journey-steps li{display:flex;gap:8px;align-items:flex-start;font-size:11px;overflow-wrap:anywhere}
+.journey-step-number{display:grid;place-items:center;min-width:20px;height:20px;border-radius:50%;background:#e8f2ff;color:#086acb;font-size:10px;font-weight:750}
+@media(max-width:650px){.journey-kpis{gap:5px}.journey-kpis .scroll-step{padding:12px 5px}.journey-kpis .scroll-step b{font-size:20px}.journey-subpanel{padding:12px}}
+</style>
 <details class="insights-advanced" id="visitor-intelligence" open>
  <summary>Visitor Intelligence <span class="subtle">Location, network clues and devices</span></summary>
  <div class="advanced-body">
@@ -158,6 +190,42 @@ function visitorBreakdowns(d,isDemo){
  }
  $('visitor-context-note').textContent=isDemo?'Demo data does not represent any real visitors.':Number(ctx.consented_context_visits)>0?fmt(ctx.consented_context_visits)+' opted-in visits provided detailed network context in this period. Some location fields may be unavailable.':'No detailed opted-in visitor context yet. Requires the Cloudflare schema and Worker update, plus visitor consent.';
 }
+function renderJourney(d,isDemo){
+ const el=$('journey-recent'),journey=isDemo?{}:(d.journey||{}),pages=journey.pages||[],transitions=journey.transitions||[],recent=journey.recent||[];
+ $('journey-sessions').textContent=isDemo?'—':fmt(journey.sessions);
+ $('journey-steps').textContent=isDemo?'—':fmt(journey.page_steps);
+ $('journey-average').textContent=isDemo?'—':(Number(journey.avg_pages_per_session)||0).toFixed(1);
+ const makeRecord=(parent,title,description,value,max)=>{
+  const entry=document.createElement('div');entry.className='journey-record';
+  const heading=document.createElement('strong');heading.textContent=title;
+  const subtitle=document.createElement('small');subtitle.textContent=description;
+  const track=document.createElement('div');track.className='path-track';
+  const fill=document.createElement('div');fill.className='path-fill';fill.style.width=Math.max(1,100*value/Math.max(1,max))+'%';track.append(fill);
+  entry.append(heading,subtitle,track);parent.append(entry);
+ };
+ const pEl=$('journey-pages');pEl.replaceChildren();
+ const maxPage=Math.max(1,...pages.map(x=>Number(x.total_ms)||0));
+ for(const p of pages)makeRecord(pEl,p.path,fmt(p.views)+' page views · '+(p.avg_active_ms===null?'Duration unavailable':miniTime(p.avg_active_ms)+' avg active'),Number(p.total_ms)||0,maxPage);
+ if(!pages.length)pEl.textContent='No completed, opted-in page visits in this period.';
+ const tEl=$('journey-transitions');tEl.replaceChildren();
+ const maxTransition=Math.max(1,...transitions.map(x=>Number(x.count)||0));
+ for(const t of transitions)makeRecord(tEl,t.from+' → '+t.to,fmt(t.count)+' transitions',Number(t.count)||0,maxTransition);
+ if(!transitions.length)tEl.textContent='No multi-page opted-in journeys yet.';
+ el.replaceChildren();
+ for(const r of recent){
+  const box=document.createElement('div');box.className='journey-entry';
+  const heading=document.createElement('h4');heading.textContent=new Date(r.started_at).toLocaleString()+' · '+(r.source||'Direct / unknown')+' · '+(r.device||'other');
+  const list=document.createElement('ol');list.className='journey-steps';
+  for(const [i,step] of (r.steps||[]).entries()){
+   const item=document.createElement('li'),number=document.createElement('span'),label=document.createElement('span');
+   number.className='journey-step-number';number.textContent=i+1;label.textContent=step.path+' · '+(step.active_ms===null?'Still active / unavailable':miniTime(step.active_ms)+' active');
+   item.append(number,label);list.append(item);
+  }
+  box.append(heading,list);el.append(box);
+ }
+ if(!recent.length)el.textContent='No opted-in journeys have been recorded yet.';
+ $('journey-note').textContent=isDemo?'Demo data does not simulate individual browsing journeys.':journey.sessions?'Time is estimated from activity on visible pages; navigation outside the site cannot be observed. Only the latest 12 journeys are displayed.':'No journey data yet. Deploy the new Cloudflare table and Worker, then test with consent enabled.';
+}
 function render(d,isDemo){
  const summary=d.summary||{},repeat=d.repeat||{},hours=Number($('range').value);
  const sources=groupedSources(d);
@@ -204,6 +272,7 @@ function render(d,isDemo){
  for(const x of d.pages||[]){const tr=document.createElement('tr');const td=document.createElement('td');td.textContent=x.path;const v=document.createElement('td');v.textContent=fmt(x.views);tr.append(td,v);pages.append(tr)}
  bars($('countries'),d.countries||[],x=>x.country,x=>x.views);
  visitorBreakdowns(d,isDemo);
+ renderJourney(d,isDemo);
  bars($('devices'),d.devices||[],x=>x.device,x=>x.views);
  bars($('referrers'),d.referrers||[],x=>x.referrer,x=>x.views);
  $('blogs').textContent=Number(summary.blog_opens)?fmt(summary.blog_opens)+' recorded blog-link opening events':'No blog openings recorded yet.';
