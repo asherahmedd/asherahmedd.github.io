@@ -65,10 +65,10 @@ async function recordJourney(req,env){
  }else return reply({error:'invalid_action'},400,cors);
  return new Response(null,{status:204,headers:cors});
 }
-async function reportJourney(db,since){
+async function reportJourney(db,since,until){
  const empty={sessions:0,page_steps:0,avg_pages_per_session:0,pages:[],transitions:[],recent:[]};
  try{
-  const rows=(await db.prepare('SELECT journey_hash,path,started_at,ended_at,active_ms,source,device FROM visitor_journey_pages WHERE started_at>=? ORDER BY started_at DESC LIMIT 1500').bind(since).all()).results||[];
+  const rows=(await db.prepare('SELECT journey_hash,path,started_at,ended_at,active_ms,source,device FROM visitor_journey_pages WHERE started_at>=? AND started_at<? ORDER BY started_at DESC LIMIT 1500').bind(since,until).all()).results||[];
   if(!rows.length)return empty;
   const groups=new Map(),byPath=new Map(),transitions=new Map();
   for(const r of rows){
@@ -95,42 +95,42 @@ async function reportJourney(db,since){
    transitions:[...transitions.values()].sort((a,b)=>b.count-a.count).slice(0,12),recent:recent.slice(0,12),limited:rows.length===1500};
  }catch{return empty}
 }
-async function report(db,hours){
- const since=hours===0?'1970-01-01T00:00:00.000Z':new Date(Date.now()-hours*3600000).toISOString();
- const bucket=hours===1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72&&hours>0?"substr(ts,1,13)":hours===0?"substr(ts,1,7)":"substr(ts,1,10)";
+async function report(db,range){
+ const {from:since,to:until,hours,kind}=range;
+ const bucket=kind==='all_time'?"substr(ts,1,7)":hours<=1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72?"substr(ts,1,13)":"substr(ts,1,10)";
  const sql={
- summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(CASE WHEN event='session_active' THEN active_ms ELSE 0 END),0) active_ms FROM events WHERE ts>=?",
- daily:`SELECT ${bucket} day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY day ORDER BY day`,
- pages:"SELECT path,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND event='page_view' GROUP BY path ORDER BY views DESC LIMIT 12",
- sections:"SELECT section,SUM(active_ms) active_ms,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='section_time' AND section<>'' GROUP BY section ORDER BY active_ms DESC LIMIT 15",
- projects:"SELECT item,COUNT(*) opens FROM events WHERE ts>=? AND event='project_open' AND item<>'' GROUP BY item ORDER BY opens DESC LIMIT 15",
- countries:"SELECT country,COUNT(*) views FROM events WHERE ts>=? AND event='page_view' GROUP BY country ORDER BY views DESC LIMIT 12",
- devices:"SELECT device,COUNT(*) views FROM events WHERE ts>=? AND event='page_view' GROUP BY device ORDER BY views DESC",
- referrers:"SELECT referrer,COUNT(*) views FROM events WHERE ts>=? AND event='page_view' AND referrer<>'' GROUP BY referrer ORDER BY views DESC LIMIT 10",
- filters:"SELECT item,COUNT(*) clicks FROM events WHERE ts>=? AND event='filter_click' GROUP BY item ORDER BY clicks DESC LIMIT 10",
- scroll:"SELECT depth,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND event='scroll_depth' AND depth>0 GROUP BY depth ORDER BY depth"};
- const keys=Object.keys(sql),rs=await Promise.all(keys.map(k=>db.prepare(sql[k]).bind(since).all()));
+ summary:"SELECT COUNT(DISTINCT CASE WHEN event='page_view' THEN visitor END) visitors,COUNT(DISTINCT CASE WHEN event='page_view' THEN session END) sessions,SUM(CASE WHEN event='page_view' THEN 1 ELSE 0 END) pageviews,SUM(CASE WHEN event='project_open' THEN 1 ELSE 0 END) project_opens,SUM(CASE WHEN event='blog_open' THEN 1 ELSE 0 END) blog_opens,COALESCE(SUM(CASE WHEN event='session_active' THEN active_ms ELSE 0 END),0) active_ms FROM events WHERE ts>=? AND ts<?",
+ daily:`SELECT ${bucket} day,COUNT(*) pageviews,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND ts<? AND event='page_view' GROUP BY day ORDER BY day`,
+ pages:"SELECT path,COUNT(*) views,COUNT(DISTINCT visitor) visitors FROM events WHERE ts>=? AND ts<? AND event='page_view' GROUP BY path ORDER BY views DESC LIMIT 12",
+ sections:"SELECT section,SUM(active_ms) active_ms,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND ts<? AND event='section_time' AND section<>'' GROUP BY section ORDER BY active_ms DESC LIMIT 15",
+ projects:"SELECT item,COUNT(*) opens FROM events WHERE ts>=? AND ts<? AND event='project_open' AND item<>'' GROUP BY item ORDER BY opens DESC LIMIT 15",
+ countries:"SELECT country,COUNT(*) views FROM events WHERE ts>=? AND ts<? AND event='page_view' GROUP BY country ORDER BY views DESC LIMIT 12",
+ devices:"SELECT device,COUNT(*) views FROM events WHERE ts>=? AND ts<? AND event='page_view' GROUP BY device ORDER BY views DESC",
+ referrers:"SELECT referrer,COUNT(*) views FROM events WHERE ts>=? AND ts<? AND event='page_view' AND referrer<>'' GROUP BY referrer ORDER BY views DESC LIMIT 10",
+ filters:"SELECT item,COUNT(*) clicks FROM events WHERE ts>=? AND ts<? AND event='filter_click' GROUP BY item ORDER BY clicks DESC LIMIT 10",
+ scroll:"SELECT depth,COUNT(DISTINCT session) sessions FROM events WHERE ts>=? AND ts<? AND event='scroll_depth' AND depth>0 GROUP BY depth ORDER BY depth"};
+ const keys=Object.keys(sql),rs=await Promise.all(keys.map(k=>db.prepare(sql[k]).bind(since,until).all()));
  let repeat={consented_visits:0,new_browsers:0,returning_visits:0,distinct_consented_browsers:0};
  const context={consented_context_visits:0,cities:[],regions:[],networks:[],timezones:[],browsers:[],operating_systems:[],devices:[],referrers:[]};
  try{
   const qs={
-   cities:"SELECT city, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND city<>'Unknown' GROUP BY city,country ORDER BY visits DESC LIMIT 15",
-   regions:"SELECT region, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND region<>'Unknown' GROUP BY region,country ORDER BY visits DESC LIMIT 15",
-   networks:"SELECT network_org, asn, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND network_org<>'Unknown' GROUP BY network_org,asn ORDER BY visits DESC LIMIT 15",
-   timezones:"SELECT timezone, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND timezone<>'Unknown' GROUP BY timezone ORDER BY visits DESC LIMIT 10",
-   browsers:"SELECT browser,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY browser ORDER BY visits DESC",
-   operating_systems:"SELECT os,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY os ORDER BY visits DESC",
-   devices:"SELECT device,COUNT(*) AS visits FROM visitor_context WHERE ts>=? GROUP BY device ORDER BY visits DESC",
-   referrers:"SELECT referrer,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND referrer<>'' GROUP BY referrer ORDER BY visits DESC LIMIT 10"
+   cities:"SELECT city, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? AND city<>'Unknown' GROUP BY city,country ORDER BY visits DESC LIMIT 15",
+   regions:"SELECT region, country, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? AND region<>'Unknown' GROUP BY region,country ORDER BY visits DESC LIMIT 15",
+   networks:"SELECT network_org, asn, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? AND network_org<>'Unknown' GROUP BY network_org,asn ORDER BY visits DESC LIMIT 15",
+   timezones:"SELECT timezone, COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? AND timezone<>'Unknown' GROUP BY timezone ORDER BY visits DESC LIMIT 10",
+   browsers:"SELECT browser,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? GROUP BY browser ORDER BY visits DESC",
+   operating_systems:"SELECT os,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? GROUP BY os ORDER BY visits DESC",
+   devices:"SELECT device,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? GROUP BY device ORDER BY visits DESC",
+   referrers:"SELECT referrer,COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<? AND referrer<>'' GROUP BY referrer ORDER BY visits DESC LIMIT 10"
   };
   const entries=Object.entries(qs);
-  const results=await Promise.all(entries.map(([,query])=>db.prepare(query).bind(since).all()));
+  const results=await Promise.all(entries.map(([,query])=>db.prepare(query).bind(since,until).all()));
   for(let i=0;i<entries.length;i++)context[entries[i][0]]=results[i].results||[];
-  const total=await db.prepare('SELECT COUNT(*) AS visits FROM visitor_context WHERE ts>=?').bind(since).first();
+  const total=await db.prepare('SELECT COUNT(*) AS visits FROM visitor_context WHERE ts>=? AND ts<?').bind(since,until).first();
   context.consented_context_visits=total?.visits||0;
  }catch{/* Feature not deployed: preserve baseline analytics. */}
- try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=?').bind(since).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
- const journey=await reportJourney(db,since);
+ try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=? AND ts<?').bind(since,until).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
+ const journey=await reportJourney(db,since,until);
  return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context,journey};
 }
 export default {
@@ -165,17 +165,27 @@ export default {
    if(req.method!=='GET')return reply({error:'method_not_allowed'},405,cors);
    if(!secretOkay(req,env.ADMIN_TOKEN))return reply({error:'unauthorized'},401,cors);
    const url=new URL(req.url);
-   const hoursParam=url.searchParams.get('hours');
-   const legacyDays=url.searchParams.get('days');
-   let hours=720;
-   if(hoursParam!==null){
-    if(!/^(0|1|24|72|168|720)$/.test(hoursParam))return reply({error:'invalid_range',allowed_hours:[0,1,24,72,168,720]},400,cors);
-    hours=Number(hoursParam);
-   }else if(legacyDays!==null){
-    if(!/^(7|30|90)$/.test(legacyDays))return reply({error:'invalid_range'},400,cors);
-    hours=Number(legacyDays)*24;
+   const fromInput=url.searchParams.get('from'),toInput=url.searchParams.get('to');
+   const hoursParam=url.searchParams.get('hours'),legacyDays=url.searchParams.get('days');
+   const now=Date.now();
+   let range;
+   if(fromInput!==null||toInput!==null){
+    if(!fromInput||!toInput||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(fromInput)||!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(toInput))return reply({error:'invalid_custom_dates'},400,cors);
+    const fromMs=Date.parse(fromInput),toMs=Date.parse(toInput);
+    if(!Number.isFinite(fromMs)||!Number.isFinite(toMs)||fromMs>=toMs||toMs>now+60000||toMs-fromMs>90*86400000)return reply({error:'invalid_custom_range',max_days:90},400,cors);
+    range={from:new Date(fromMs).toISOString(),to:new Date(toMs).toISOString(),hours:(toMs-fromMs)/3600000,kind:'custom'};
+   }else{
+    let hours=720;
+    if(hoursParam!==null){
+     if(!/^\d+$/.test(hoursParam)||![0,1,3,6,12,24,72,168,336,720,2160].includes(Number(hoursParam)))return reply({error:'invalid_range',allowed_hours:[0,1,3,6,12,24,72,168,336,720,2160]},400,cors);
+     hours=Number(hoursParam);
+    }else if(legacyDays!==null){
+     if(!/^(7|30|90)$/.test(legacyDays))return reply({error:'invalid_range'},400,cors);
+     hours=Number(legacyDays)*24;
+    }
+    range={from:hours===0?'1970-01-01T00:00:00.000Z':new Date(now-hours*3600000).toISOString(),to:new Date(now).toISOString(),hours,kind:hours===0?'all_time':'rolling'};
    }
-   try{return reply({hours,period:hours===0?'all_time':'rolling',days:hours===0?null:hours/24,generated_at:new Date().toISOString(),...await report(env.DB,hours)},200,cors)}
+   try{return reply({hours:range.kind==='custom'?null:range.hours,period:range.kind,days:range.kind==='all_time'?null:range.hours/24,generated_at:new Date().toISOString(),range:{from:range.from,to:range.to,kind:range.kind},...await report(env.DB,range)},200,cors)}
    catch{return reply({error:'storage_unavailable'},503,cors)}
   }
   return reply({error:'not_found'},404);
