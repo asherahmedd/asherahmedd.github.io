@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs><linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#ffffff"/><stop offset=".64" stop-color="#f6faff"/><stop offset="1" stop-color="#e6f2ff"/></linearGradient><linearGradient id="blue" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0071e3"/><stop offset="1" stop-color="#0043b6"/></linearGradient><linearGradient id="screen" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#0d3771"/><stop offset="1" stop-color="#082248"/></linearGradient></defs>
+<rect width="1200" height="630" fill="url(#bg)"/>
+<path d="M820 0h380v530Q1082 475 952 520T710 630H350Q530 515 670 370T820 0" fill="#cce5ff" opacity=".7"/>
+<path d="M1040 0h160v420q-135-60-255 19T705 545q178-182 240-339T1040 0" fill="#83c4ff" opacity=".48"/>
+<g transform="translate(65 78)">
+<text x="0" y="75" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="64" letter-spacing="-2" fill="#081933">Muhammad Ashar</text>
+<text x="0" y="132" font-family="Arial,Helvetica,sans-serif" font-weight="750" font-size="37" fill="#0863cd">Data &amp; AI Solution Architect</text>
+<rect x="0" y="158" width="84" height="7" rx="3.5" fill="#0878ee"/>
+<text x="0" y="217" font-family="Arial,Helvetica,sans-serif" font-size="23" fill="#465a76">SAP Data &amp; Analytics  ·  Enterprise AI</text>
+<text x="0" y="250" font-family="Arial,Helvetica,sans-serif" font-size="23" fill="#465a76">Solution Architecture</text>
+<g transform="translate(0 300)">
+<rect x="0" width="165" height="78" rx="13" fill="#fff" stroke="#cee0f5"/><text x="82" y="33" font-family="Arial" font-size="16" font-weight="700" text-anchor="middle" fill="#1558ad">SAP Business</text><text x="82" y="56" font-family="Arial" font-size="16" font-weight="700" text-anchor="middle" fill="#1558ad">Data Cloud</text>
+<rect x="178" width="165" height="78" rx="13" fill="#fff" stroke="#cee0f5"/><text x="260" y="45" font-family="Arial" font-size="17" font-weight="700" text-anchor="middle" fill="#1558ad">SAP Datasphere</text>
+<rect x="356" width="165" height="78" rx="13" fill="#fff" stroke="#cee0f5"/><text x="438" y="33" font-family="Arial" font-size="16" font-weight="700" text-anchor="middle" fill="#1558ad">SAP Analytics</text><text x="438" y="56" font-family="Arial" font-size="16" font-weight="700" text-anchor="middle" fill="#1558ad">Cloud</text>
+</g>
+<rect x="0" y="438" rx="23" width="308" height="49" fill="#edf5ff" stroke="#bed9f9"/>
+<text x="20" y="469" font-family="Arial,Helvetica,sans-serif" font-size="20" font-weight="700" fill="#155fae">asherahmedd.github.io</text>
+</g>
+<g transform="translate(720 200)">
+<rect x="7" y="12" width="430" height="280" rx="20" fill="#002a66" opacity=".11"/>
+<rect x="0" y="0" width="430" height="280" rx="18" fill="#10223b"/>
+<rect x="14" y="14" width="402" height="251" rx="10" fill="url(#screen)"/>
+<text x="34" y="44" font-family="Arial" font-size="17" font-weight="700" fill="#e8f4ff">Enterprise Analytics</text>
+<rect x="32" y="68" width="226" height="164" rx="11" fill="#144c87"/>
+<text x="48" y="92" font-family="Arial" font-size="12" fill="#cee8ff">Performance dashboard</text>
+<path d="M55 203v-28h23v28M87 203v-64h23v64M120 203v-48h23v48M153 203v-86h23v86M186 203v-72h23v72M219 203v-109h23v109" fill="#69b3ff"/>
+<rect x="271" y="68" width="128" height="75" rx="10" fill="#144c87"/>
+<text x="285" y="92" font-family="Arial" font-size="11" fill="#cee8ff">Sales performance</text>
+<text x="285" y="124" font-family="Arial" font-size="23" font-weight="700" fill="#fff">18.9M</text>
+<rect x="271" y="154" width="128" height="78" rx="10" fill="#144c87"/>
+<circle cx="335" cy="194" r="24" fill="none" stroke="#7ac6ff" stroke-width="10"/>
+<path d="M335 170a24 24 0 0 1 23 17" fill="none" stroke="#f7b84b" stroke-width="10"/>
+<path d="M-20 281h470l-29 22H13z" fill="#9aaec3"/>
+<rect x="96" y="292" width="238" height="5" rx="3" fill="#c9d9e9"/>
+</g>
+<g transform="translate(907 154)"><rect width="255" height="45" rx="22.5" fill="#fff" stroke="#c9e1fa"/><text x="22" y="29" font-family="Arial" font-size="17" fill="#174c8d">✦  Ask your data...</text></g>
+</svg>
