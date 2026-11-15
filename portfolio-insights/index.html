@@ -37,10 +37,65 @@
 .empty-small{font-size:12px;color:#8b98a9}
 @media(max-width:650px){.insights-advanced>summary{padding:16px}.insights-advanced .advanced-body{padding:0 12px 13px}}
 </style>
+<style id="analytics-time-window-ui">
+.range-toggle{display:inline-flex;align-items:center;gap:10px;min-width:170px;justify-content:space-between!important;background:#fff!important;border:1px solid #cdd9ea!important;color:#184b82!important;font-weight:720!important;box-shadow:0 3px 12px #1a47750b}
+.range-toggle:hover,.range-toggle[aria-expanded="true"]{border-color:#0071e3!important;background:#f3f8ff!important}
+.time-window{border:1px solid #dce6f2;border-radius:18px;background:#fff;box-shadow:0 9px 28px #21436a0e;padding:20px 22px;margin:-4px 0 18px}
+.time-window[hidden]{display:none!important}
+.time-head{display:flex;align-items:start;justify-content:space-between;gap:15px}
+.time-head strong{font-size:16px;letter-spacing:-.025em}
+.time-head p{color:#78879a;font-size:11px;margin:5px 0 0}
+.time-head button{border:0;background:#f2f5f9;width:30px;height:30px;border-radius:8px;color:#65758a;font-size:20px;cursor:pointer}
+.time-presets{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0}
+.time-presets button{background:#f6f8fb;border:1px solid #e0e7f0;color:#52647a;border-radius:9px;padding:8px 13px;font-size:11px;font-weight:690;cursor:pointer}
+.time-presets button.active{background:#e8f3ff;border-color:#8cbbef;color:#075fbf}
+.time-slider-wrap{padding:16px;background:#f7fafe;border:1px solid #e9f0f8;border-radius:13px}
+.time-slider-header{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:12px}
+.time-slider-header label{color:#5e7085}.time-slider-header strong{color:#126bc2}
+.time-slider-wrap input[type="range"]{width:100%;accent-color:#0071e3;cursor:pointer}
+.time-slider-ticks{display:flex;justify-content:space-between;font-size:10px;color:#96a4b3;margin-top:6px}
+.time-custom{margin-top:17px}
+.time-custom-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.time-custom-heading strong{font-size:12px}.time-custom-heading span{font-size:10px;color:#8492a2}
+.time-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:9px;align-items:end}
+.time-fields label{display:flex;flex-direction:column;gap:6px;color:#65758a;font-size:10px;font-weight:710}
+.time-fields input{width:100%;min-width:0;background:#fff;border:1px solid #d9e2ed;border-radius:9px;padding:10px 9px;color:#33445a;font-size:12px}
+.time-fields button{border:0;background:#111827;color:#fff;font-size:12px;font-weight:700;border-radius:9px;padding:11px 17px;cursor:pointer}
+.time-fields button:hover{background:#293952}
+.time-error{min-height:15px;margin:7px 0 0;color:#ba3542;font-size:11px}
+.time-foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #eef2f6;padding-top:12px;margin-top:9px;color:#8290a0;font-size:10px}
+@media(max-width:650px){.time-window{padding:16px 14px}.time-fields{grid-template-columns:1fr 1fr}.time-fields button{grid-column:1/-1}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}.time-custom-heading{align-items:start;flex-direction:column;gap:3px}}
+@media(max-width:400px){.time-fields{grid-template-columns:1fr}.time-fields button{grid-column:auto}.range-toggle{min-width:155px}}
+</style>
 </head>
 <body>
 <header class="top"><div class="top-inner"><a class="brand" href="/">Muhammad Ashar<span>.</span> <span style="color:#6e6e73;font-size:12px;font-weight:550">Insights</span></a><nav class="top-links"><a href="/">Portfolio</a><a href="https://github.com/asherahmedd" target="_blank" rel="noopener">GitHub ↗</a></nav></div></header>
-<main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><select id="range" aria-label="Date range"><option value="1">Last 1 hour</option><option value="24">Last 1 day</option><option value="72">Last 3 days</option><option value="168">Last 1 week</option><option value="720" selected>Last 1 month</option><option value="0">All time (stored history)</option></select><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
+<main class="wrap"><div class="heading"><div><div class="eyebrow">PRIVATE ANALYTICS</div><h1>Portfolio Insights</h1><p>Understand how visitors discover and explore your work.</p></div><div class="actions"><button id="range-toggle" class="range-toggle" type="button" aria-expanded="false" aria-controls="time-window"><span aria-hidden="true">◷</span> <span id="range-summary">Last 30 days</span> <span aria-hidden="true">⌄</span></button><button id="refresh" type="button">Refresh ↻</button><button id="demo" class="primary" type="button">View demo</button></div></div>
+<section class="time-window" id="time-window" aria-label="Select analytics time window" hidden>
+ <div class="time-head"><div><strong>Explore a time window</strong><p>All KPIs, charts and visitor journeys update together.</p></div><button id="time-close" type="button" aria-label="Close date range controls">×</button></div>
+ <div class="time-presets" aria-label="Quick date ranges">
+  <button type="button" data-hours="1">1 hour</button>
+  <button type="button" data-hours="24">24 hours</button>
+  <button type="button" data-hours="168">7 days</button>
+  <button type="button" data-hours="720">30 days</button>
+  <button type="button" data-hours="0">All time</button>
+ </div>
+ <div class="time-slider-wrap">
+  <div class="time-slider-header"><label for="time-slider">Rolling lookback</label><strong id="time-slider-value">30 days</strong></div>
+  <input id="time-slider" type="range" min="0" max="9" step="1" value="8" aria-label="Rolling time range">
+  <div class="time-slider-ticks"><span>1 hour</span><span>1 day</span><span>1 week</span><span>90 days</span></div>
+ </div>
+ <div class="time-custom">
+  <div class="time-custom-heading"><strong>Custom date &amp; time</strong><span>Local timezone · 90-day maximum</span></div>
+  <div class="time-fields">
+   <label>From <input id="time-from" type="datetime-local" aria-label="Start date and time"></label>
+   <label>To <input id="time-to" type="datetime-local" aria-label="End date and time"></label>
+   <button id="time-apply" type="button">Apply range</button>
+  </div>
+  <p id="time-error" class="time-error" role="status" aria-live="polite"></p>
+ </div>
+ <div class="time-foot"><span id="time-selection">Selected: Last 30 days</span><span>All time includes retained data only (up to 90 days).</span></div>
+</section>
 <div class="connection"><span class="dot" id="dot"></span><span id="status">Demo mode — no real visitor data</span><span class="status-details" id="updated">Awaiting API connection</span></div>
 <h2 class="executive-title">At a glance</h2>
 <p class="section-description">Understand your portfolio traffic without needing to interpret technical events. All numbers use your selected date range.</p>
