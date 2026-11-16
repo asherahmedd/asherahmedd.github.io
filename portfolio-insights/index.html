@@ -23,6 +23,14 @@
 /* Clear readable source labels on mobile devices. */
 #external-referrers .bar-row,#internal-referrers .bar-row,#blog-pages .bar-row{grid-template-columns:minmax(115px,1.15fr) minmax(0,1.65fr) 40px}
 @media(max-width:650px){#external-referrers .bar-row,#internal-referrers .bar-row,#blog-pages .bar-row{grid-template-columns:minmax(95px,1.2fr) minmax(0,1.25fr) 30px;gap:7px}}
+/* Browser-only owner exclusion, available after authenticated dashboard connection. */
+.owner-exclusion{border:1px solid #d2e1f2;border-radius:15px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 20px;margin:-4px 0 22px}
+.owner-exclusion[hidden]{display:none!important}
+.owner-exclusion-copy{min-width:0}.owner-exclusion-copy strong{font-size:14px;color:#24344a}.owner-exclusion-copy p{margin:5px 0;color:#67778b;font-size:12px;line-height:1.6}.owner-exclusion-copy small{color:#62758d;font-size:11px}
+.owner-exclusion-toggle{flex:none;border:1px solid #b9d2ee;background:#edf5ff;border-radius:10px;color:#0869c6;padding:10px 14px;font-size:12px;font-weight:750}
+.owner-exclusion-toggle[aria-pressed="true"]{background:#effaf4;border-color:#a8dabc;color:#177346}
+.owner-exclusion-toggle:hover{filter:brightness(.97)}
+@media(max-width:650px){.owner-exclusion{align-items:stretch;flex-direction:column;padding:16px}.owner-exclusion-toggle{width:100%}}
 </style>
 <style id="insights-executive-view">
 .executive-title{font-size:17px;letter-spacing:-.025em;margin:23px 0 10px}
@@ -121,6 +129,10 @@
  <div class="time-foot"><span id="time-selection">Selected: Last 30 days</span><span>All time includes retained data only (up to 90 days).</span></div>
 </section>
 <div class="connection"><span class="dot" id="dot"></span><span id="status">Demo mode — no real visitor data</span><span class="status-details" id="updated">Awaiting API connection</span></div>
+<section class="owner-exclusion" id="owner-exclusion" aria-label="Owner tracking exclusion" hidden>
+ <div class="owner-exclusion-copy"><strong>Exclude this browser from analytics</strong><p>Stop recording your own portfolio visits, clicks and journeys from this browser profile. Existing data is unchanged.</p><small id="owner-exclusion-status" role="status" aria-live="polite">Loading browser preference…</small></div>
+ <button id="owner-exclusion-toggle" class="owner-exclusion-toggle" type="button" aria-pressed="false">Enable exclusion</button>
+</section>
 <h2 class="executive-title">At a glance</h2>
 <p class="section-description">Understand your portfolio traffic without needing to interpret technical events. All numbers use your selected date range.</p>
 <div class="kpis">
@@ -213,6 +225,26 @@
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>new Intl.NumberFormat('en-US').format(Math.round(Number(n)||0));const miniTime=m=>m>=60000?(m/60000).toFixed(1)+' min':Math.round(m/1000)+' sec';
 let secret='',api='',mode='none',requestVersion=0;
+const ownerExcludeKey='portfolio_exclude_owner';
+const ownerRead=()=>{try{return localStorage.getItem(ownerExcludeKey)==='true'}catch{return false}};
+function syncOwnerExclusion(){
+ const excluded=ownerRead(),button=$('owner-exclusion-toggle');
+ button.setAttribute('aria-pressed',String(excluded));
+ button.textContent=excluded?'Turn exclusion off':'Exclude this browser';
+ $('owner-exclusion-status').textContent=excluded?'Exclusion enabled: this browser is not tracked.':'Tracking is currently allowed on this browser.';
+}
+$('owner-exclusion-toggle').addEventListener('click',()=>{
+ if(!secret)return;
+ const next=!ownerRead();
+ try{
+  if(next)localStorage.setItem(ownerExcludeKey,'true');
+  else localStorage.removeItem(ownerExcludeKey);
+ }catch{$('owner-exclusion-status').textContent='Unable to save this setting. Check browser storage permissions.';return}
+ syncOwnerExclusion();
+});
+addEventListener('storage',e=>{if(e.key===ownerExcludeKey)syncOwnerExclusion()});
+syncOwnerExclusion();
+
 const sliderHours=[1,3,6,12,24,72,168,336,720,2160];
 let timeRange={kind:'rolling',hours:720};const params=new URLSearchParams(location.search);try{api=localStorage.getItem('portfolio-insights-api')||''}catch{}$('endpoint').value=api;
 const names={'analytics':'SAP Analytics Cloud & Power BI','planning':'SAC Custom Planning','datasphere':'SAP Datasphere Engineering','automation':'SAP’s Autonomous Enterprise','agent':'AI-Powered Analytics Agent for SAP'};
@@ -471,8 +503,8 @@ $('connect').addEventListener('submit',async e=>{
  const raw=$('endpoint').value.trim().replace(/\/$/,'');
  if(!/^https:\/\/[a-z0-9.-]+(?::\d+)?$/i.test(raw)){alert('Enter a valid HTTPS Worker base URL, without a path.');return}
  api=raw;secret=$('token').value;
- try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';$('connection-toggle').classList.add('connected');showConnectionPanel(false);}
- catch(err){secret='';$('status').textContent='Connection failed — '+err.message;alert(err.message)}
+ try{await load();localStorage.setItem('portfolio-insights-api',api);$('token').value='';$('connection-toggle').classList.add('connected');$('owner-exclusion').hidden=false;syncOwnerExclusion();showConnectionPanel(false);}
+ catch(err){secret='';$('owner-exclusion').hidden=true;$('status').textContent='Connection failed — '+err.message;alert(err.message)}
 });
 $('demo').addEventListener('click',()=>{requestVersion++;render(example,true)});
 $('refresh').addEventListener('click',()=>{if(secret)load().catch(e=>{$('status').textContent=e.message});else render(example,true)});
