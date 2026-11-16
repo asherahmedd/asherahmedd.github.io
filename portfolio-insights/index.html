@@ -248,7 +248,7 @@ function insight(text){
  const li=document.createElement('li');li.textContent=text;$('insight-list').append(li);
 }
 function isSelfReferrer(host){
- const h=String(host||'').trim().toLowerCase().replace(/\\.$/,'');
+ const h=String(host||'').trim().toLowerCase().replace(/\.$/,'');
  return h==='asherahmedd.github.io';
 }
 function sourceClassification(d){
@@ -290,7 +290,7 @@ function renderTrafficAndBlogs(d){
  const views=articles.reduce((n,x)=>n+Math.max(0,Number(x.views)||0),0);
  $('blog-clicks').textContent=fmt(clicks);
  $('blog-views').textContent=fmt(views);
- bars($('blog-pages'),articles,x=>decodeURIComponent(x.path.split('/').pop().replace(/\\.html$/,'')).replace(/[-_]/g,' '),x=>x.views);
+ bars($('blog-pages'),articles,x=>decodeURIComponent(x.path.split('/').pop().replace(/\.html$/,'')).replace(/[-_]/g,' '),x=>x.views);
  $('blog-note').textContent='Article page views shown are '+(articles.length?'from '+articles.length+' blog page'+(articles.length===1?'':'s'):'not available')+' in the top-12 pages returned by the API; they may undercount all blog views. Blog-link clicks are separate events, not confirmed reads.';
 }
 function visitorBreakdowns(d,isDemo){
