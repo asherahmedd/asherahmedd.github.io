@@ -20,6 +20,9 @@
 /* Show readable country names without clipping on smaller screens. */
 #countries .bar-row{grid-template-columns:minmax(150px,1.35fr) minmax(0,2fr) 40px}
 @media(max-width:650px){#countries .bar-row{grid-template-columns:minmax(130px,1.25fr) minmax(0,1.5fr) 34px}}
+/* Clear readable source labels on mobile devices. */
+#external-referrers .bar-row,#internal-referrers .bar-row,#blog-pages .bar-row{grid-template-columns:minmax(115px,1.15fr) minmax(0,1.65fr) 40px}
+@media(max-width:650px){#external-referrers .bar-row,#internal-referrers .bar-row,#blog-pages .bar-row{grid-template-columns:minmax(95px,1.2fr) minmax(0,1.25fr) 30px;gap:7px}}
 </style>
 <style id="insights-executive-view">
 .executive-title{font-size:17px;letter-spacing:-.025em;margin:23px 0 10px}
@@ -199,7 +202,7 @@
   </div>
   <div class="layout">
    <section class="panel"><h2>New vs returning browsers</h2><p>Counts only browsers that agreed to optional analytics cookies.</p><div class="repeat-metrics" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px"><div class="scroll-step"><b id="new-browsers">—</b><small>New opted-in browsers</small></div><div class="scroll-step"><b id="consented-browsers">—</b><small>Distinct opted-in browsers</small></div></div><p class="subtle" id="repeat-explanation">Requires optional visitor consent.</p></section>
-   <section class="panel"><h2>Detailed traffic sources</h2><p>Referring domains for all tracked visits.</p><div class="rows" id="referrers"></div><hr class="thin-rule"><h2>Blog interest</h2><p id="blogs">No blog openings recorded yet.</p></section>
+   <section class="panel"><h2>Where visitors came from</h2><p>External referring domains recorded for portfolio page views.</p><div class="rows" id="external-referrers"></div><p class="subtle" id="external-note">External sources are grouped separately from site navigation.</p><hr class="thin-rule"><h2>Navigation within your portfolio</h2><p>Page views referred by your own website, not new external visitors.</p><div class="rows" id="internal-referrers"></div><p class="subtle" id="internal-note">Referrer counts represent page loads, not unique people.</p><hr class="thin-rule"><h2>Unattributed page views</h2><p id="unattributed-note">No source breakdown available yet.</p><hr class="thin-rule"><h2>Blog engagement</h2><div class="scroll-grid" style="grid-template-columns:repeat(2,minmax(0,1fr));margin:10px 0 12px"><div class="scroll-step"><b id="blog-clicks">—</b><small>Blog-link clicks</small></div><div class="scroll-step"><b id="blog-views">—</b><small>Article page views*</small></div></div><div class="rows" id="blog-pages"></div><p class="subtle" id="blog-note">* Article views are limited to the pages returned in the current analytics response.</p></section>
   </div>
  </div>
 </details>
@@ -244,22 +247,51 @@ function plot(arr){const max=Math.max(1,...arr.map(v=>v.pageviews));const points
 function insight(text){
  const li=document.createElement('li');li.textContent=text;$('insight-list').append(li);
 }
-function groupedSources(d){
- const raw=Array.isArray(d.referrers)?d.referrers:[];
- const counts={LinkedIn:0,Google:0,GitHub:0,Other:0};
- for(const r of raw){
-  const host=String(r.referrer||'').toLowerCase();
+function isSelfReferrer(host){
+ const h=String(host||'').trim().toLowerCase().replace(/\\.$/,'');
+ return h==='asherahmedd.github.io';
+}
+function sourceClassification(d){
+ const rows=Array.isArray(d.referrers)?d.referrers:[];
+ const external=[],internal=[];
+ let known=0;
+ for(const r of rows){
+  const host=String(r.referrer||'').trim().toLowerCase();
   const views=Math.max(0,Number(r.views)||0);
-  if(host==='linkedin.com'||host.endsWith('.linkedin.com')||host==='lnkd.in')counts.LinkedIn+=views;
+  if(!host||!views)continue;
+  known+=views;
+  (isSelfReferrer(host)?internal:external).push({referrer:host,views});
+ }
+ const total=Math.max(0,Number(d.summary?.pageviews)||0);
+ return {external,internal,remainder:Math.max(0,total-known),total};
+}
+function groupedSources(d){
+ const classified=sourceClassification(d);
+ const counts={LinkedIn:0,Google:0,GitHub:0,Other:0};
+ for(const r of classified.external){
+  const host=r.referrer,views=r.views;
+  if(host==='linkedin.com'||host.endsWith('.linkedin.com')||host==='lnkd.in'||host==='com.linkedin.android')counts.LinkedIn+=views;
   else if(host==='google.com'||host.endsWith('.google.com'))counts.Google+=views;
   else if(host==='github.com'||host.endsWith('.github.com'))counts.GitHub+=views;
   else counts.Other+=views;
  }
- const total=Math.max(0,Number(d.summary?.pageviews)||0);
- const named=counts.LinkedIn+counts.Google+counts.GitHub;
- // The backend caps referrer hosts to 10. The remainder includes direct and unknown traffic.
- counts.Other=Math.max(0,total-named);
- return [['LinkedIn',counts.LinkedIn],['Google',counts.Google],['GitHub',counts.GitHub],['Other / unknown',counts.Other]];
+ counts.Other+=classified.remainder;
+ return [['LinkedIn',counts.LinkedIn],['Google',counts.Google],['GitHub',counts.GitHub],['Other / unattributed',counts.Other]];
+}
+function renderTrafficAndBlogs(d){
+ const classified=sourceClassification(d);
+ bars($('external-referrers'),classified.external,x=>x.referrer,x=>x.views);
+ bars($('internal-referrers'),classified.internal,x=>x.referrer,x=>x.views);
+ $('external-note').textContent='Known external sources: '+fmt(classified.external.reduce((n,x)=>n+x.views,0))+' referred page views. Domains, not unique visitors.';
+ $('internal-note').textContent='Own-site referrals: '+fmt(classified.internal.reduce((n,x)=>n+x.views,0))+' page views from internal navigation.';
+ $('unattributed-note').textContent=classified.remainder?fmt(classified.remainder)+' page views have no source in this breakdown. This can include direct/hidden referrers and lower-ranked domains omitted by the top-10 API limit.':'No additional unattributed page views in the returned breakdown.';
+ const clicks=Math.max(0,Number(d.summary?.blog_opens)||0);
+ const articles=(Array.isArray(d.pages)?d.pages:[]).filter(x=>String(x.path||'').startsWith('/blog/'));
+ const views=articles.reduce((n,x)=>n+Math.max(0,Number(x.views)||0),0);
+ $('blog-clicks').textContent=fmt(clicks);
+ $('blog-views').textContent=fmt(views);
+ bars($('blog-pages'),articles,x=>decodeURIComponent(x.path.split('/').pop().replace(/\\.html$/,'')).replace(/[-_]/g,' '),x=>x.views);
+ $('blog-note').textContent='Article page views shown are '+(articles.length?'from '+articles.length+' blog page'+(articles.length===1?'':'s'):'not available')+' in the top-12 pages returned by the API; they may undercount all blog views. Blog-link clicks are separate events, not confirmed reads.';
 }
 function visitorBreakdowns(d,isDemo){
  const ctx=d.context||{},list=[
@@ -361,8 +393,7 @@ function render(d,isDemo){
  visitorBreakdowns(d,isDemo);
  renderJourney(d,isDemo);
  bars($('devices'),d.devices||[],x=>x.device,x=>x.views);
- bars($('referrers'),d.referrers||[],x=>x.referrer,x=>x.views);
- $('blogs').textContent=Number(summary.blog_opens)?fmt(summary.blog_opens)+' recorded blog-link opening events':'No blog openings recorded yet.';
+ renderTrafficAndBlogs(d);
  mode=isDemo?'demo':'live';$('dot').classList.toggle('live',!isDemo);
  $('status').textContent=isDemo?'Demo mode — fictional example; date filter requires a live connection':'Live analytics — authenticated';
  $('updated').textContent=isDemo?'Not connected':'Updated '+new Date().toLocaleTimeString();
