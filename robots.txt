@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://asherahmedd.github.io/sitemap.xml
