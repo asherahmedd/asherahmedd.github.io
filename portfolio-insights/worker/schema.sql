@@ -67,3 +67,12 @@ CREATE TABLE IF NOT EXISTS visitor_journey_pages (
 );
 CREATE INDEX IF NOT EXISTS idx_journey_started ON visitor_journey_pages(started_at);
 CREATE INDEX IF NOT EXISTS idx_journey_hash_started ON visitor_journey_pages(journey_hash,started_at);
+
+-- Consent-based mapping between hashed browser identity and hashed tab journeys.
+CREATE TABLE IF NOT EXISTS visitor_journey_owner (
+ journey_hash TEXT PRIMARY KEY,
+ browser_hash TEXT NOT NULL,
+ first_seen TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_journey_owner_browser ON visitor_journey_owner(browser_hash);
+CREATE INDEX IF NOT EXISTS idx_journey_owner_first_seen ON visitor_journey_owner(first_seen);
