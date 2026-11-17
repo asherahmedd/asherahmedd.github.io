@@ -91,7 +91,7 @@
 .connection-form button:hover{background:#0064c2}
 .connection-privacy{font-size:10px;color:#8995a6;line-height:1.5;margin:12px 0 0}
 @media(max-width:480px){.connection-popover{right:12px}.top-links{gap:9px}.connection-toggle{padding:8px 10px;font-size:11px}}
-</style></head>
+</style><style>.return-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.return-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:9px}.return-compare>div{background:#f7f9fc;border-radius:10px;padding:11px;overflow-wrap:anywhere}.return-compare b{display:block;font-size:11px;margin-bottom:6px}.return-compare p{margin:0;font-size:11px;line-height:1.6}@media(max-width:650px){.return-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.return-compare{grid-template-columns:1fr}}</style></head>
 <body>
 <header class="top"><div class="top-inner"><a class="brand" href="/">Muhammad Ashar<span>.</span> <span style="color:#6e6e73;font-size:12px;font-weight:550">Insights</span></a><nav class="top-links"><a href="/">Portfolio</a><a href="https://github.com/asherahmedd" target="_blank" rel="noopener">GitHub ↗</a><button id="connection-toggle" class="connection-toggle" type="button" aria-expanded="false" aria-controls="connection-panel"><span class="connection-indicator" aria-hidden="true"></span><span>Connect</span><svg class="connection-chevron" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 10 5 5 5-5"/></svg></button></nav></div>
 <div class="connection-popover" id="connection-panel" hidden>
@@ -149,6 +149,7 @@
  <details class="journey-details"><summary>See individual anonymous journeys</summary><div id="journey-recent" class="journey-recent"></div></details>
  <p class="subtle" id="journey-note">Journey activity appears here when visitors explore multiple pages after accepting optional analytics cookies.</p>
 </section>
+<section class="panel" id="returning-analysis" style="margin-top:14px"><div class="panel-heading"><h2>Returning Visitor Analysis</h2><span class="subtle">Consented browsers</span></div><p>When browsers return, how long they were away, and which pages they explored.</p><div class="return-kpis"><div class="scroll-step"><b id="return-session-count">—</b><small>Returning sessions</small></div><div class="scroll-step"><b id="return-browser-count">—</b><small>Returning browsers</small></div><div class="scroll-step"><b id="return-median">—</b><small>Median time to return</small></div><div class="scroll-step"><b id="return-page-avg">—</b><small>Pages per return</small></div></div><div class="layout"><div class="journey-subpanel"><h3>Time to return</h3><div class="rows" id="return-intervals"></div></div><div class="journey-subpanel"><h3>Pages explored on return</h3><div class="rows" id="return-pages"></div></div></div><details class="journey-details"><summary>Previous visit vs. returning visit</summary><div class="journey-recent" id="return-recent"></div></details><p class="subtle" id="return-note">Requires the updated Cloudflare Worker and D1 migration.</p></section>
 <style id="journey-dashboard-styles">
 .journey-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:13px 0}
 .journey-subpanel{border:1px solid #edf1f5;border-radius:13px;padding:14px;min-width:0}
@@ -345,6 +346,25 @@ function renderJourney(d,isDemo){
  if(!recent.length)el.textContent='No opted-in journeys have been recorded yet.';
  $('journey-note').textContent=isDemo?'Demo data does not simulate individual browsing journeys.':!Object.prototype.hasOwnProperty.call(d,'journey')?'Journey reporting is unavailable from the connected analytics service.':journey.sessions?'Time is estimated from activity on visible pages; navigation outside the site cannot be observed. Only the latest 12 journeys are displayed.':'No journeys recorded for this time window yet. Journeys appear automatically after visitors consent and explore your pages.';
 }
+function returnInterval(hours){const h=Number(hours)||0;return h<1?Math.round(h*60)+' min':h<48?(Math.round(h*10)/10)+' hr':(Math.round(h/24*10)/10)+' days'}
+function renderReturning(d,isDemo){
+ const r=d.returning||{},available=!isDemo&&r.available===true;
+ const values={'return-session-count':r.returning_sessions,'return-browser-count':r.returning_browsers,'return-median':r.median_hours==null?'—':returnInterval(r.median_hours),'return-page-avg':r.avg_pages==null?'—':r.avg_pages};
+ for(const [id,value] of Object.entries(values))$(id).textContent=available?(typeof value==='number'?fmt(value):value||'—'):'—';
+ bars($('return-intervals'),available?(r.intervals||[]):[],x=>x.label,x=>x.count);
+ bars($('return-pages'),available?(r.popular_pages||[]):[],x=>x.path,x=>x.views);
+ const root=$('return-recent');root.replaceChildren();
+ if(available)for(const [i,v] of (r.recent||[]).entries()){
+  const card=document.createElement('div');card.className='journey-entry';
+  const h=document.createElement('h4');h.textContent='Return '+(i+1)+' · '+new Date(v.at).toLocaleString()+' · after '+returnInterval(v.after_hours);
+  const grid=document.createElement('div');grid.className='return-compare';
+  for(const [label,steps] of [['Previous visit',v.previous_paths||[]],['Returning visit',v.paths||[]]]){
+   const cell=document.createElement('div'),b=document.createElement('b'),p=document.createElement('p');b.textContent=label;p.textContent=steps.join(' → ')||'No recorded pages';cell.append(b,p);grid.append(cell)
+  }card.append(h,grid);root.append(card)
+ }
+ if(!root.children.length)root.textContent='No matched returning journeys available yet.';
+ $('return-note').textContent=isDemo?'Demo mode: no fictional returning journeys are shown.':!r.available?'Returning journey analysis needs the D1 migration and updated Worker. Existing analytics remain available.':r.returning_sessions?'Only consenting browser journeys are included. Historical journeys cannot be linked retroactively.'+(r.limited?' Results capped at 5,000 page steps.':''):'No matched returning journeys yet; new consenting visits will populate this section.';
+}
 function render(d,isDemo){
  const summary=d.summary||{},repeat=d.repeat||{},hours=timeRange.kind==='all_time'?0:timeRange.kind==='custom'?(Date.parse(timeRange.to)-Date.parse(timeRange.from))/3600000:timeRange.hours;
  const sources=groupedSources(d);
@@ -392,6 +412,7 @@ function render(d,isDemo){
  bars($('countries'),d.countries||[],x=>countryLabel(x.country),x=>x.views);
  visitorBreakdowns(d,isDemo);
  renderJourney(d,isDemo);
+ renderReturning(d,isDemo);
  bars($('devices'),d.devices||[],x=>x.device,x=>x.views);
  renderTrafficAndBlogs(d);
  mode=isDemo?'demo':'live';$('dot').classList.toggle('live',!isDemo);
