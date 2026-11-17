@@ -107,7 +107,7 @@ async function reportReturning(db,since,until){
  const empty={available:false,returning_sessions:0,returning_browsers:0,median_hours:null,avg_pages:null,intervals:[],popular_pages:[],recent:[],limited:false};
  try{
   // Retrieve a 90-day lookback to calculate intervals even when a shorter period is selected.
-  const lookback=new Date(Math.max(Date.parse(since),Date.parse(until)-90*86400000)).toISOString();
+  const lookback=new Date(Math.max(Date.parse(since)-90*86400000,Date.parse(until)-90*86400000)).toISOString();
   const rows=(await db.prepare(
    'SELECT m.browser_hash,p.journey_hash,p.path,p.started_at,p.active_ms,p.source FROM visitor_journey_pages p JOIN visitor_journey_owner m ON m.journey_hash=p.journey_hash WHERE p.started_at>=? AND p.started_at<? ORDER BY p.started_at ASC LIMIT 5000'
   ).bind(lookback,until).all()).results||[];
