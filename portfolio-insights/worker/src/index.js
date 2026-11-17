@@ -57,6 +57,12 @@ async function recordJourney(req,env){
  if(data.action==='start'){
   const source=safe(data.source||'',100),device=['mobile','tablet','desktop'].includes(data.device)?data.device:'other';
   await env.DB.prepare('INSERT OR IGNORE INTO visitor_journey_pages(journey_hash,page_id,path,started_at,source,device) VALUES(?,?,?,?,?,?)').bind(hash,data.page_id,path,new Date().toISOString(),source,device).run();
+  // Link only explicitly consented browser IDs to tab journeys, using one-way digests.
+  // The optional mapping table is created by the returning-analysis migration.
+  if(typeof data.browser_id==='string'&&/^[0-9a-f-]{36}$/i.test(data.browser_id)){
+   const browserHash=await identityHash(data.browser_id,env.ADMIN_TOKEN);
+   try{await env.DB.prepare('INSERT OR IGNORE INTO visitor_journey_owner(journey_hash,browser_hash,first_seen) VALUES(?,?,?)').bind(hash,browserHash,new Date().toISOString()).run()}catch{/* Migration not applied: preserve existing journeys. */}
+  }
  }else if(data.action==='end'){
   const duration=Number(data.active_ms);
   if(!Number.isFinite(duration))return reply({error:'invalid_duration'},400,cors);
@@ -95,6 +101,49 @@ async function reportJourney(db,since,until){
    transitions:[...transitions.values()].sort((a,b)=>b.count-a.count).slice(0,12),recent:recent.slice(0,12),limited:rows.length===1500};
  }catch{return empty}
 }
+/* Returning-browser analysis is restricted to consented, hashed journeys.
+   A browser can contain multiple people; never expose stable hashes to the dashboard. */
+async function reportReturning(db,since,until){
+ const empty={available:false,returning_sessions:0,returning_browsers:0,median_hours:null,avg_pages:null,intervals:[],popular_pages:[],recent:[],limited:false};
+ try{
+  // Retrieve a 90-day lookback to calculate intervals even when a shorter period is selected.
+  const lookback=new Date(Math.max(Date.parse(since),Date.parse(until)-90*86400000)).toISOString();
+  const rows=(await db.prepare(
+   'SELECT m.browser_hash,p.journey_hash,p.path,p.started_at,p.active_ms,p.source FROM visitor_journey_pages p JOIN visitor_journey_owner m ON m.journey_hash=p.journey_hash WHERE p.started_at>=? AND p.started_at<? ORDER BY p.started_at ASC LIMIT 5000'
+  ).bind(lookback,until).all()).results||[];
+  const sessions=new Map();
+  for(const r of rows){
+   let s=sessions.get(r.journey_hash);
+   if(!s){s={browser:r.browser_hash,id:r.journey_hash,start:r.started_at,source:r.source||'',paths:[],active:0};sessions.set(r.journey_hash,s)}
+   s.paths.push(r.path);s.active+=Math.max(0,Number(r.active_ms)||0);
+  }
+  const byBrowser=new Map();
+  for(const s of sessions.values()){
+   if(!byBrowser.has(s.browser))byBrowser.set(s.browser,[]);
+   byBrowser.get(s.browser).push(s);
+  }
+  const intervals=[{label:'Under 24 hours',count:0},{label:'1–7 days',count:0},{label:'8–30 days',count:0},{label:'Over 30 days',count:0}];
+  const gaps=[],recent=[],pages=new Map(),returningBrowsers=new Set();
+  let returningSessions=0,pageSteps=0;
+  for(const [browser,list] of byBrowser){
+   list.sort((a,b)=>a.start.localeCompare(b.start));
+   for(let i=1;i<list.length;i++){
+    const previous=list[i-1],current=list[i];
+    if(current.start<since||current.start>=until)continue;
+    const hours=(Date.parse(current.start)-Date.parse(previous.start))/3600000;
+    if(!Number.isFinite(hours)||hours<0)continue;
+    gaps.push(hours);
+    intervals[hours<24?0:hours<=168?1:hours<=720?2:3].count++;
+    returningSessions++;returningBrowsers.add(browser);pageSteps+=current.paths.length;
+    for(const path of current.paths)pages.set(path,(pages.get(path)||0)+1);
+    recent.push({at:current.start,after_hours:Math.round(hours*10)/10,visit_number:i+1,source:current.source||'Direct / unknown',previous_paths:previous.paths.slice(0,12),paths:current.paths.slice(0,12),active_ms:current.active});
+   }
+  }
+  gaps.sort((a,b)=>a-b);recent.sort((a,b)=>b.at.localeCompare(a.at));
+  const median=gaps.length?(gaps.length%2?gaps[(gaps.length-1)/2]:(gaps[gaps.length/2-1]+gaps[gaps.length/2])/2):null;
+  return {available:true,returning_sessions:returningSessions,returning_browsers:returningBrowsers.size,median_hours:median===null?null:Math.round(median*10)/10,avg_pages:returningSessions?Math.round(pageSteps/returningSessions*10)/10:null,intervals,popular_pages:[...pages].map(([path,views])=>({path,views})).sort((a,b)=>b.views-a.views).slice(0,10),recent:recent.slice(0,10),limited:rows.length===5000};
+ }catch{return empty}
+}
 async function report(db,range){
  const {from:since,to:until,hours,kind}=range;
  const bucket=kind==='all_time'?"substr(ts,1,7)":hours<=1?"strftime('%Y-%m-%d %H:',ts) || printf('%02d', CAST(CAST(strftime('%M',ts) AS INTEGER)/5 AS INTEGER)*5)":hours<=72?"substr(ts,1,13)":"substr(ts,1,10)";
@@ -131,7 +180,8 @@ async function report(db,range){
  }catch{/* Feature not deployed: preserve baseline analytics. */}
  try{repeat=await db.prepare('SELECT COUNT(*) AS consented_visits, COALESCE(SUM(CASE WHEN is_returning=0 THEN 1 ELSE 0 END),0) AS new_browsers, COALESCE(SUM(CASE WHEN is_returning=1 THEN 1 ELSE 0 END),0) AS returning_visits, COUNT(DISTINCT visitor_hash) AS distinct_consented_browsers FROM identity_visits WHERE ts>=? AND ts<?').bind(since,until).first()||repeat}catch{/* Migration not yet applied: baseline reports remain available. */}
  const journey=await reportJourney(db,since,until);
- return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context,journey};
+ const returning=await reportReturning(db,since,until);
+ return {...Object.fromEntries(keys.map((k,i)=>[k,k==='summary'?(rs[i].results[0]||{}):rs[i].results])),repeat:repeat||{},context,journey,returning};
 }
 export default {
  async fetch(req,env){
@@ -190,5 +240,5 @@ export default {
   }
   return reply({error:'not_found'},404);
  },
- async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run();try{await env.DB.prepare('DELETE FROM visitor_context WHERE ts<?').bind(cutoff).run()}catch{};try{await env.DB.prepare('DELETE FROM visitor_journey_pages WHERE started_at<?').bind(cutoff).run()}catch{}}
+ async scheduled(event,env){const cutoff=new Date(Date.now()-90*86400000).toISOString();await env.DB.prepare('DELETE FROM events WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visits WHERE ts<?').bind(cutoff).run();await env.DB.prepare('DELETE FROM identity_visitors WHERE last_seen<?').bind(cutoff).run();try{await env.DB.prepare('DELETE FROM visitor_context WHERE ts<?').bind(cutoff).run()}catch{};try{await env.DB.prepare('DELETE FROM visitor_journey_pages WHERE started_at<?').bind(cutoff).run()}catch{};try{await env.DB.prepare('DELETE FROM visitor_journey_owner WHERE first_seen<?').bind(cutoff).run()}catch{}}
 };
