@@ -44,7 +44,8 @@ function writeRepeatCookie(id){
 let journeyStarted=false,journeyId='',pageId='',activeMs=0,lastActivity=Date.now();
 const journeyKey='portfolio_journey_tab_v1';
 function journeyPayload(action){
- return {action,consent:true,journey_id:journeyId,page_id:pageId,path:location.pathname,
+ return {action,consent:true,journey_id:journeyId,page_id:pageId,
+  ...(action==='start'?{browser_id:readRepeatCookie()}:{}),path:location.pathname,
   device:innerWidth<700?'mobile':innerWidth<1000?'tablet':'desktop',
   source:(()=>{try{return new URL(document.referrer).hostname}catch{return''}})(),
   active_ms:activeMs};
@@ -74,13 +75,13 @@ function startJourney(){
 }
 function identityVisit(){
  if(repeatRead(repeatChoice)!=='yes')return;
- startJourney();
  let id=readRepeatCookie();
  if(!id||!/^[0-9a-f-]{36}$/i.test(id)){
   id=fresh();
   if(!writeRepeatCookie(id))return;
  }
  try{localStorage.removeItem(repeatId)}catch{}
+ startJourney();
  fetch(base+'/identity',{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({persistent_id:id,consent:true,device:innerWidth<700?'mobile':innerWidth<1000?'tablet':'desktop',referrer:(()=>{try{return new URL(document.referrer).hostname}catch{return''}})()}),keepalive:true}).catch(()=>{});
 }
 async function offerRepeatChoice(){
@@ -93,7 +94,7 @@ async function offerRepeatChoice(){
   host.setAttribute('aria-label','Analytics cookie preferences');
   host.style.cssText='position:fixed;bottom:17px;left:17px;right:17px;z-index:100000;max-width:430px;background:#fff;color:#20252c;border:1px solid #dce2e9;border-radius:15px;box-shadow:0 12px 35px #18243b26;padding:17px 18px;font:13px/1.5 -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
   const heading=document.createElement('strong');heading.textContent='Allow analytics cookies?';
-  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='Basic visit statistics run without cookies. If you allow optional analytics cookies, we can count repeat visits and summarize approximate city, region, internet network provider, browser, device and your page-to-page journey (pages viewed and approximate active time). We do not identify you by name, employer or LinkedIn profile.';
+  const p=document.createElement('p');p.style.cssText='margin:7px 0 12px;color:#566272';p.textContent='Basic visit statistics run without cookies. If you allow optional analytics cookies, we can count repeat visits, measure how long it takes this browser to return, compare pages explored between visits, and summarize approximate location, network provider, browser, device and page journeys. We do not identify you by name, employer or LinkedIn profile.';
   const actions=document.createElement('div');actions.style.cssText='display:flex;gap:9px;flex-wrap:wrap;align-items:center';
   const yes=document.createElement('button'),no=document.createElement('button'),link=document.createElement('a');
   yes.type='button';no.type='button';yes.textContent='Allow analytics cookies';no.textContent='Reject optional cookies';link.href=repeatPrivacy;link.textContent='Cookie details';
