@@ -441,7 +441,6 @@ function syncTimeControls(){
  $('range-summary').textContent=label;
  $('time-selection').textContent='Selected: '+label;
  $('time-slider-value').textContent=label;
- $('time-slider').disabled=all;
  if(!all)$('time-slider').value=String(sliderPosition(hours));
  const unit=hours>=24&&hours%24===0?'days':'hours';
  $('time-unit').value=unit;
