@@ -66,8 +66,8 @@
 .time-slider-header label{color:#5e7085}.time-slider-header strong{color:#126bc2}
 .time-slider-wrap input[type="range"]{width:100%;accent-color:#0071e3;cursor:pointer}
 .time-slider-ticks{display:flex;justify-content:space-between;font-size:10px;color:#96a4b3;margin-top:6px}
-.time-foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #eef2f6;padding-top:12px;margin-top:9px;color:#8290a0;font-size:10px}
-@media(max-width:650px){.time-window{padding:16px 14px}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}}
+.time-custom{margin-top:16px;padding-top:15px;border-top:1px solid #e5edf7}.time-custom>label{display:block;font-size:11px;color:#53677d;font-weight:700;margin-bottom:7px}.time-custom-fields{display:flex;gap:8px;align-items:center}.time-custom-fields input,.time-custom-fields select{height:39px;background:#fff;border:1px solid #cbd9ea;border-radius:9px;color:#24394f;padding:8px 11px;font-size:13px}.time-custom-fields input{width:110px;min-width:0}.time-custom-fields select{width:106px}.time-custom-fields button{height:39px;padding:0 17px;border:0;border-radius:9px;background:#0071e3;color:#fff;font-size:12px;font-weight:750}.time-custom-fields button:hover{background:#005fbe}.time-custom>p{font-size:10px;color:#8191a5;margin:7px 0 0}.time-custom>p.time-invalid{color:#b53b3b}.time-foot{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #eef2f6;padding-top:12px;margin-top:9px;color:#8290a0;font-size:10px}
+@media(max-width:650px){.time-window{padding:16px 14px}.time-foot{flex-direction:column;gap:4px}.time-presets button{padding:8px 10px}.time-custom-fields input{flex:1;width:0}.time-custom-fields select{width:92px}.time-custom-fields button{padding:0 12px}}
 @media(max-width:400px){.range-toggle{min-width:155px}}
 </style>
 <style id="header-connect-panel-css">
@@ -108,15 +108,22 @@
  <div class="time-head"><div><strong>Explore a time window</strong><p>All KPIs, charts and visitor journeys update together.</p></div><button id="time-close" type="button" aria-label="Close date range controls">×</button></div>
  <div class="time-presets" aria-label="Quick date ranges">
   <button type="button" data-hours="1">1 hour</button>
-  <button type="button" data-hours="24">24 hours</button>
+  <button type="button" data-hours="3">3 hours</button>
+  <button type="button" data-hours="24">1 day</button>
+  <button type="button" data-hours="48">2 days</button>
   <button type="button" data-hours="168">7 days</button>
   <button type="button" data-hours="720">30 days</button>
   <button type="button" data-hours="0">All time</button>
  </div>
  <div class="time-slider-wrap">
-  <div class="time-slider-header"><label for="time-slider">Rolling lookback</label><strong id="time-slider-value">30 days</strong></div>
-  <input id="time-slider" type="range" min="0" max="9" step="1" value="8" aria-label="Rolling time range">
-  <div class="time-slider-ticks"><span>1 hour</span><span>1 day</span><span>1 week</span><span>90 days</span></div>
+  <div class="time-slider-header"><label for="time-slider">Choose any duration</label><strong id="time-slider-value">30 days</strong></div>
+  <input id="time-slider" type="range" min="1" max="113" step="1" value="53" aria-label="Flexible duration slider from 1 hour to 90 days">
+  <div class="time-slider-ticks"><span>1 hour</span><span>1 day</span><span>30 days</span><span>90 days</span></div>
+  <div class="time-custom">
+   <label for="time-duration">Exact duration</label>
+   <div class="time-custom-fields"><input type="number" id="time-duration" min="1" max="90" step="1" value="30" inputmode="numeric" aria-label="Exact time duration"><select id="time-unit" aria-label="Duration unit"><option value="hours">Hours</option><option value="days" selected>Days</option></select><button type="button" id="time-apply">Apply</button></div>
+   <p id="time-validation" role="status" aria-live="polite">Select any hour or day within the last 90 days.</p>
+  </div>
  </div>
  <div class="time-foot"><span id="time-selection">Selected: Last 30 days</span><span>All time includes retained data only (up to 90 days).</span></div>
 </section>
@@ -214,7 +221,9 @@
 'use strict';
 const $=id=>document.getElementById(id);const fmt=n=>new Intl.NumberFormat('en-US').format(Math.round(Number(n)||0));const miniTime=m=>m>=60000?(m/60000).toFixed(1)+' min':Math.round(m/1000)+' sec';
 let secret='',api='',mode='none',requestVersion=0;
-const sliderHours=[1,3,6,12,24,72,168,336,720,2160];
+const MAX_LOOKBACK_HOURS=2160;
+const sliderHours=position=>position<=24?position:(position-23)*24;
+const sliderPosition=hours=>hours<=24?hours:Math.max(25,Math.min(113,23+Math.round(hours/24)));
 let timeRange={kind:'rolling',hours:720};const params=new URLSearchParams(location.search);try{api=localStorage.getItem('portfolio-insights-api')||''}catch{}$('endpoint').value=api;
 const names={'analytics':'SAP Analytics Cloud & Power BI','planning':'SAC Custom Planning','datasphere':'SAP Datasphere Engineering','automation':'SAP’s Autonomous Enterprise','agent':'AI-Powered Analytics Agent for SAP'};
 const example={summary:{visitors:428,sessions:517,pageviews:1194,project_opens:289,blog_opens:134,active_ms:56205000},daily:Array.from({length:30},(_,i)=>({day:'Day '+(i+1),pageviews:Math.round(19+12*Math.sin(i*.64)**2+i*.75),visitors:Math.round(9+6*Math.sin(i*.5)**2+i*.3)})),pages:[{path:'/',views:627},{path:'/projects/sap-datasphere-engineering.html',views:192},{path:'/projects/advanced-sap-analytics-cloud-dashboards.html',views:131},{path:'/blog/enterprise-ai-analytics-agent.html',views:83},{path:'/projects/sac-distributor-replenishment-planning.html',views:77}],sections:[{section:'work',active_ms:23800000,sessions:350},{section:'skills',active_ms:9900000,sessions:180},{section:'journey',active_ms:6900000,sessions:115},{section:'writing',active_ms:4500000,sessions:81}],projects:[{item:'datasphere',opens:115},{item:'analytics',opens:86},{item:'planning',opens:49},{item:'agent',opens:27},{item:'automation',opens:12}],scroll:[{depth:25,sessions:422},{depth:50,sessions:331},{depth:75,sessions:209},{depth:90,sessions:118}],countries:[{country:'DE',views:160},{country:'SA',views:149},{country:'NL',views:97},{country:'PK',views:87},{country:'US',views:66}],devices:[{device:'desktop',views:640},{device:'mobile',views:512},{device:'tablet',views:42}],referrers:[{referrer:'linkedin.com',views:389},{referrer:'github.com',views:72},{referrer:'google.com',views:55}],filters:[{item:'datasphere',clicks:102},{item:'sac',clicks:85},{item:'ai',clicks:52},{item:'planning',clicks:42},{item:'powerbi',clicks:19}]};
@@ -427,11 +436,19 @@ function rangeLabel(hours){
  return 'Last '+hours+' hours';
 }
 function syncTimeControls(){
- const hours=timeRange.hours;
- $('range-summary').textContent=rangeLabel(hours);
- $('time-selection').textContent='Selected: '+rangeLabel(hours);
- const index=sliderHours.indexOf(hours);
- if(index>=0){$('time-slider').value=String(index);$('time-slider-value').textContent=rangeLabel(hours);}
+ const hours=timeRange.hours,all=timeRange.kind==='all_time';
+ const label=rangeLabel(hours);
+ $('range-summary').textContent=label;
+ $('time-selection').textContent='Selected: '+label;
+ $('time-slider-value').textContent=label;
+ $('time-slider').disabled=all;
+ if(!all)$('time-slider').value=String(sliderPosition(hours));
+ const unit=hours>=24&&hours%24===0?'days':'hours';
+ $('time-unit').value=unit;
+ $('time-duration').value=String(unit==='days'?hours/24:hours||1);
+ $('time-duration').max=unit==='days'?'90':'2160';
+ $('time-validation').classList.remove('time-invalid');
+ $('time-validation').textContent=all?'All retained visits are selected. Move the slider or enter a duration to switch back.':'Select any hour or day within the last 90 days.';
  for(const button of document.querySelectorAll('.time-presets button'))button.classList.toggle('active',Number(button.dataset.hours)===hours);
 }
 function showTimeRange(open){
@@ -449,7 +466,12 @@ async function load(){
  const version=++requestVersion;
  const current={...timeRange};
  const params=new URLSearchParams();
- params.set('hours',String(current.hours));
+ if(current.kind==='all_time')params.set('hours','0');
+ else{
+  const endTime=new Date(),startTime=new Date(endTime.getTime()-current.hours*3600000);
+  params.set('from',startTime.toISOString());
+  params.set('to',endTime.toISOString());
+ }
  const resp=await fetch(api+'/stats?'+params.toString(),{headers:{Authorization:'Bearer '+secret},cache:'no-store'});
  if(!resp.ok){
   let message='Analytics service unavailable ('+resp.status+')';
@@ -459,7 +481,7 @@ async function load(){
  }
  const data=await resp.json();
  if(version!==requestVersion)return;
- if(!data.range||!data.range.from||!data.range.to||data.range.kind!==current.kind||Number(data.hours)!==Number(current.hours)){
+ if(!data.range||!data.range.from||!data.range.to||(current.kind==='all_time'?data.range.kind!=='all_time':data.range.kind!=='custom'||Math.abs((Date.parse(data.range.to)-Date.parse(data.range.from))/3600000-current.hours)>0.01)){
   $('status').textContent='Cloudflare Worker update required — the requested time window was not applied.';
   $('dot').classList.remove('live');
   throw Error('Cloudflare Worker is outdated: deploy the latest Worker source to apply this time window.');
@@ -471,12 +493,28 @@ $('range-toggle').addEventListener('click',()=>showTimeRange($('time-window').hi
 $('time-close').addEventListener('click',()=>showTimeRange(false));
 document.querySelectorAll('.time-presets button').forEach(button=>button.addEventListener('click',()=>applyRolling(Number(button.dataset.hours))));
 $('time-slider').addEventListener('input',()=>{
- const hours=sliderHours[Number($('time-slider').value)];
+ const hours=sliderHours(Number($('time-slider').value));
  $('time-slider-value').textContent=rangeLabel(hours);
 });
-$('time-slider').addEventListener('change',()=>{
- applyRolling(sliderHours[Number($('time-slider').value)]);
+$('time-slider').addEventListener('change',()=>applyRolling(sliderHours(Number($('time-slider').value))));
+$('time-unit').addEventListener('change',()=>{
+ const unit=$('time-unit').value;
+ const hours=timeRange.hours||24;
+ $('time-duration').value=String(unit==='days'?Math.max(1,Math.min(90,Math.round(hours/24))):Math.max(1,Math.min(2160,hours)));
+ $('time-duration').max=unit==='days'?'90':'2160';
 });
+function applyExactDuration(){
+ const value=Number($('time-duration').value),unit=$('time-unit').value;
+ const hours=unit==='days'?value*24:value;
+ if(!Number.isInteger(value)||value<1||hours>MAX_LOOKBACK_HOURS){
+  $('time-validation').classList.add('time-invalid');
+  $('time-validation').textContent='Enter a whole number from 1 to '+(unit==='days'?'90 days.':'2160 hours.');
+  return;
+ }
+ applyRolling(hours);
+}
+$('time-apply').addEventListener('click',applyExactDuration);
+$('time-duration').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();applyExactDuration()}});
 const connectionPanel=$('connection-panel');
 function showConnectionPanel(open){
  connectionPanel.hidden=!open;
